@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { authService } from '../services/api';
 import Navbar from '../components/Navbar';
@@ -27,14 +27,35 @@ import zalopayLogo from '../assets/zalopay.jpg';
 const Home = () => {
     const [origin, setOrigin] = useState('SGN');
     const [destination, setDestination] = useState('HAN');
-    const [passengers, setPassengers] = useState('2 Người lớn, 1 Trẻ em');
+    const [pax, setPax] = useState({ adult: 2, child: 1, infant: 0 });
+    const [paxOpen, setPaxOpen] = useState(false);
+    const paxRef = useRef(null);
     const [loading, setLoading] = useState(false);
     const [activeServiceTab, setActiveServiceTab] = useState('Trước khi đặt vé');
     const navigate = useNavigate();
+    const totalPassengers = pax.adult + pax.child + pax.infant;
+
+    const paxLabel = (() => {
+        const parts = [];
+        if (pax.adult) parts.push(`${pax.adult} Người lớn`);
+        if (pax.child) parts.push(`${pax.child} Trẻ em`);
+        if (pax.infant) parts.push(`${pax.infant} Em bé`);
+        return parts.join(', ') || '1 Người lớn';
+    })();
 
     useEffect(() => {
         authService.getCurrentUser();
     }, []);
+
+    useEffect(() => {
+        const onDown = (e) => {
+            if (!paxOpen) return;
+            if (!paxRef.current) return;
+            if (!paxRef.current.contains(e.target)) setPaxOpen(false);
+        };
+        document.addEventListener('mousedown', onDown);
+        return () => document.removeEventListener('mousedown', onDown);
+    }, [paxOpen]);
 
     const handleSearch = (e) => {
         e.preventDefault();
@@ -198,6 +219,105 @@ const Home = () => {
             width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
         }
         .w-sep { width: 1px; height: 32px; background: #ede8e0; flex-shrink: 0; }
+
+        /* ── Passenger popover (Home widget) ── */
+        .w-pax-btn{
+            width: 100%;
+            border: none; outline: none; background: transparent;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-size: 14px; font-weight: 600; color: #0b1f3a;
+            display: flex; align-items: center; justify-content: space-between;
+            gap: 10px;
+            padding: 0;
+            cursor: pointer;
+            text-align: left;
+        }
+        .w-pax-chev { opacity: .55; flex-shrink: 0; }
+        .w-pax-pop{
+            position: absolute;
+            top: calc(100% + 10px);
+            right: 10px;
+            width: 340px;
+            max-width: min(340px, 92vw);
+            background: #fff;
+            border: 1px solid rgba(11,31,58,.10);
+            border-radius: 16px;
+            box-shadow: 0 26px 80px -46px rgba(11,31,58,.55);
+            padding: 12px;
+            z-index: 50;
+        }
+        .w-pax-head{
+            display:flex; align-items:center; justify-content:space-between;
+            gap:10px;
+            padding: 6px 6px 10px;
+            border-bottom: 1px solid #f1f5f9;
+            margin-bottom: 8px;
+        }
+        .w-pax-title{
+            font-size: 12.5px;
+            font-weight: 800;
+            color: #0b1f3a;
+            letter-spacing: .02em;
+        }
+        .w-pax-close{
+            width: 30px; height: 30px;
+            border-radius: 999px;
+            border: 1px solid rgba(11,31,58,.10);
+            background: #fff;
+            cursor: pointer;
+            font-size: 18px;
+            line-height: 1;
+            display:flex; align-items:center; justify-content:center;
+            color: #0b1f3a;
+        }
+        .w-pax-row{
+            display:flex; align-items:center; justify-content:space-between;
+            gap: 12px;
+            padding: 12px 10px;
+            border-radius: 12px;
+        }
+        .w-pax-row:hover{ background:#f8f9fc; }
+        .w-pax-left{ display:grid; gap:2px; }
+        .w-pax-name{ font-size: 14px; font-weight: 800; color:#0b1f3a; }
+        .w-pax-desc{ font-size: 12px; font-weight: 700; color:#7a869a; }
+        .w-pax-ctrl{ display:flex; align-items:center; gap: 12px; }
+        .w-step{
+            width: 34px; height: 34px;
+            border-radius: 999px;
+            border: 1px solid rgba(11,31,58,.12);
+            background: #fff;
+            cursor: pointer;
+            font-weight: 900;
+            display:flex; align-items:center; justify-content:center;
+            transition: transform .12s, background .15s;
+        }
+        .w-step:hover:not(:disabled){ background:#fff; transform: translateY(-1px); }
+        .w-step:disabled{ opacity:.45; cursor:not-allowed; }
+        .w-pax-num{ width: 26px; text-align:center; font-weight: 900; color: #ef4444; }
+        .w-pax-foot{
+            display:flex; align-items:center; justify-content:space-between;
+            gap: 10px;
+            padding: 10px 6px 6px;
+            border-top: 1px solid #f1f5f9;
+            margin-top: 8px;
+        }
+        .w-pax-note{ font-size: 12px; font-weight: 700; color:#7a869a; line-height: 1.4; }
+        .w-pax-done{
+            height: 36px;
+            padding: 0 14px;
+            border-radius: 12px;
+            border: none;
+            background: #0b1f3a;
+            color: #fff;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-size: 13px;
+            font-weight: 800;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+        @media(max-width:900px){
+            .w-pax-pop{ right: 0; width: 100%; max-width: 100%; }
+        }
         .w-btn {
             flex-shrink: 0; margin: 6px;
             padding: 16px 32px;
@@ -479,12 +599,88 @@ const Home = () => {
                         </div>
                     </div>
                     <div className="w-sep" />
-                    <div className="w-field">
+                    <div className="w-field" style={{ position: 'relative' }} ref={paxRef}>
                         <span className="w-icon">👥</span>
                         <div style={{ minWidth: 0 }}>
                             <label className="w-label">Hành khách</label>
-                            <input className="w-input" type="text" value={passengers} onChange={e => setPassengers(e.target.value)} />
+                            <button
+                                type="button"
+                                className="w-pax-btn"
+                                onClick={() => setPaxOpen((v) => !v)}
+                                aria-haspopup="dialog"
+                                aria-expanded={paxOpen}
+                            >
+                                <span className="w-input" style={{ width: '100%' }}>{paxLabel}</span>
+                                <svg className="w-pax-chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4">
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 9l6 6 6-6" />
+                                </svg>
+                            </button>
                         </div>
+
+                        {paxOpen && (
+                            <div className="w-pax-pop" role="dialog" aria-label="Chọn hành khách">
+                                <div className="w-pax-head">
+                                    <div className="w-pax-title">Yêu cầu trợ giúp đặc biệt</div>
+                                    <button type="button" className="w-pax-close" onClick={() => setPaxOpen(false)} aria-label="Đóng">×</button>
+                                </div>
+
+                                {[
+                                    { key: 'adult', name: 'Người lớn', desc: '12 tuổi trở lên', min: 1 },
+                                    { key: 'child', name: 'Trẻ em', desc: '2–11 tuổi', min: 0 },
+                                    { key: 'infant', name: 'Em bé', desc: 'Dưới 2 tuổi', min: 0 }
+                                ].map((row) => {
+                                    const value = pax[row.key];
+                                    const canDec = value > row.min;
+                                    const canIncTotal = totalPassengers < 20;
+                                    const canIncInfant = row.key !== 'infant' || pax.infant < pax.adult;
+                                    const canInc = canIncTotal && canIncInfant;
+
+                                    return (
+                                        <div className="w-pax-row" key={row.key}>
+                                            <div className="w-pax-left">
+                                                <div className="w-pax-name">{row.name}</div>
+                                                <div className="w-pax-desc">{row.desc}</div>
+                                            </div>
+                                            <div className="w-pax-ctrl">
+                                                <button
+                                                    type="button"
+                                                    className="w-step"
+                                                    disabled={!canDec}
+                                                    onClick={() => {
+                                                        setPax((prev) => {
+                                                            const next = { ...prev, [row.key]: prev[row.key] - 1 };
+                                                            if (next.adult < 1) next.adult = 1;
+                                                            if (next.infant > next.adult) next.infant = next.adult;
+                                                            return next;
+                                                        });
+                                                    }}
+                                                    aria-label={`Giảm ${row.name}`}
+                                                >
+                                                    −
+                                                </button>
+                                                <div className="w-pax-num">{value}</div>
+                                                <button
+                                                    type="button"
+                                                    className="w-step"
+                                                    disabled={!canInc}
+                                                    onClick={() => setPax((prev) => ({ ...prev, [row.key]: prev[row.key] + 1 }))}
+                                                    aria-label={`Tăng ${row.name}`}
+                                                >
+                                                    +
+                                                </button>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+
+                                <div className="w-pax-foot">
+                                    <div className="w-pax-note">
+                                        Tối đa 20 hành khách. Em bé không vượt quá số người lớn.
+                                    </div>
+                                    <button type="button" className="w-pax-done" onClick={() => setPaxOpen(false)}>Xong</button>
+                                </div>
+                            </div>
+                        )}
                     </div>
                     <button type="submit" className="w-btn" disabled={loading}>
                         {loading

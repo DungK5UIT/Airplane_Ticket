@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useSearchParams, useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
-import './Auth.css';
+// import './Auth.css';
 
 const VerifyEmail = () => {
     const [searchParams] = useSearchParams();

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { authService } from '../services/api';
 import logoImg from '../assets/logo.jpg'; // Đảm bảo file img1.png (hoặc .jpg) đã có trong thư mục src/assets
 
@@ -7,6 +7,7 @@ const Navbar = ({ transparent = false }) => {
     const [user, setUser] = useState(null);
     const [scrolled, setScrolled] = useState(false);
     const navigate = useNavigate();
+    const location = useLocation();
 
     useEffect(() => {
         const currentUser = authService.getCurrentUser();
@@ -158,8 +159,8 @@ const Navbar = ({ transparent = false }) => {
                 </Link>
 
                 <div className="nav-links">
-                    <Link to="/" className="nav-link active">Trang chủ</Link>
-                    <a href="#" className="nav-link">Chuyến bay</a>
+                    <Link to="/" className={`nav-link ${location.pathname === '/' ? 'active' : ''}`}>Trang chủ</Link>
+                    <Link to="/flight" className={`nav-link ${location.pathname === '/flight' ? 'active' : ''}`}>Chuyến bay</Link>
                     <a href="#" className="nav-link">Ưu đãi</a>
                 </div>
 

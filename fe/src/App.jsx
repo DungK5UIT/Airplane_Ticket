@@ -7,6 +7,9 @@ import VerifyEmail from './pages/VerifyEmail';
 import AdminAuth from './pages/AdminAuth';
 import Home from './pages/Home';
 import AdminDashboard from './pages/AdminDashboard';
+import Flight from './pages/Flight';
+import FlightDetail from './pages/FlightDetail';
+import Orders from './pages/Orders';
 
 function App() {
   return (
@@ -18,6 +21,9 @@ function App() {
         <Route path="/verify-email" element={<VerifyEmail />} />
         <Route path="/admin" element={<AdminAuth />} />
         <Route path="/" element={<Home />} />
+        <Route path="/flight" element={<Flight />} />
+        <Route path="/flight-detail" element={<FlightDetail />} />
+        <Route path="/orders" element={<Orders />} />
         <Route path="/admin/dashboard" element={<AdminDashboard />} />
       </Routes>
     </Router>

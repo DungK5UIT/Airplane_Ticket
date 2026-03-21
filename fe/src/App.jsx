@@ -10,6 +10,9 @@ import AdminDashboard from './pages/AdminDashboard';
 import Flight from './pages/Flight';
 import FlightDetail from './pages/FlightDetail';
 import Orders from './pages/Orders';
+import Profile from './pages/Profile';
+import Notifications from './pages/Notifications';
+import Support from './pages/Support';
 
 function App() {
   return (
@@ -24,6 +27,9 @@ function App() {
         <Route path="/flight" element={<Flight />} />
         <Route path="/flight-detail" element={<FlightDetail />} />
         <Route path="/orders" element={<Orders />} />
+        <Route path="/profile" element={<Profile />} />
+        <Route path="/notifications" element={<Notifications />} />
+        <Route path="/support" element={<Support />} />
         <Route path="/admin/dashboard" element={<AdminDashboard />} />
       </Routes>
     </Router>

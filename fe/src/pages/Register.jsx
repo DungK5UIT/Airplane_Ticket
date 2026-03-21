@@ -45,239 +45,101 @@ const Register = () => {
     };
 
     return (
-        <div
-            className="min-h-screen flex"
-            style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", background: '#f0f4f8' }}
-        >
-            <style>{`
-                @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
-
-                .fv-input-field {
-                    position: relative;
-                }
-                .fv-input-field label {
-                    display: block;
-                    font-family: 'Plus Jakarta Sans', sans-serif;
-                    font-size: 13.5px;
-                    font-weight: 700;
-                    color: #374151;
-                    margin-bottom: 8px;
-                    letter-spacing: 0.01em;
-                }
-                .fv-input-wrap {
-                    position: relative;
-                    display: flex;
-                    align-items: center;
-                }
-                .fv-input-wrap svg.fv-icon-left {
-                    position: absolute;
-                    left: 14px;
-                    width: 17px;
-                    height: 17px;
-                    color: #9ca3af;
-                    pointer-events: none;
-                    flex-shrink: 0;
-                    z-index: 1;
-                }
-                .fv-input-wrap input {
-                    width: 100%;
-                    height: 50px;
-                    background: #ffffff;
-                    border: 1.5px solid #e5e7eb;
-                    border-radius: 12px;
-                    padding: 0 14px 0 44px;
-                    font-family: 'Plus Jakarta Sans', sans-serif;
-                    font-size: 14.5px;
-                    font-weight: 500;
-                    color: #111827;
-                    outline: none;
-                    transition: border-color 0.18s, box-shadow 0.18s;
-                    box-sizing: border-box;
-                }
-                .fv-input-wrap input.has-right-btn {
-                    padding-right: 48px;
-                }
-                .fv-input-wrap input::placeholder {
-                    color: #9ca3af;
-                    font-weight: 400;
-                }
-                .fv-input-wrap input:focus {
-                    border-color: #2563eb;
-                    box-shadow: 0 0 0 4px rgba(37,99,235,0.10);
-                }
-                .fv-eye-btn {
-                    position: absolute;
-                    right: 0;
-                    height: 100%;
-                    width: 46px;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    background: none;
-                    border: none;
-                    cursor: pointer;
-                    color: #9ca3af;
-                    transition: color 0.15s;
-                    z-index: 1;
-                }
-                .fv-eye-btn:hover { color: #374151; }
-                .fv-eye-btn svg { width: 17px; height: 17px; }
-
-                .fv-submit-btn {
-                    width: 100%;
-                    height: 52px;
-                    background: #1d4ed8;
-                    border: none;
-                    border-radius: 12px;
-                    color: #fff;
-                    font-family: 'Plus Jakarta Sans', sans-serif;
-                    font-size: 15px;
-                    font-weight: 700;
-                    letter-spacing: 0.02em;
-                    cursor: pointer;
-                    transition: background 0.18s, transform 0.1s, box-shadow 0.18s;
-                    box-shadow: 0 4px 20px rgba(29,78,216,0.28);
-                }
-                .fv-submit-btn:hover:not(:disabled) {
-                    background: #1e40af;
-                    box-shadow: 0 6px 28px rgba(29,78,216,0.36);
-                }
-                .fv-submit-btn:active:not(:disabled) { transform: scale(0.99); }
-                .fv-submit-btn:disabled { opacity: 0.65; cursor: not-allowed; }
-            `}</style>
-
-            {/* ── LEFT: Branding ── */}
+        <div className="min-h-screen flex bg-slate-100 font-sans">
             <div className="hidden lg:flex lg:w-5/12 relative overflow-hidden">
-                <div
-                    className="absolute inset-0 bg-cover bg-center"
-                    style={{
-                        backgroundImage: "url('https://images.unsplash.com/photo-1436491865332-7a61a109cc05?ixlib=rb-4.0.3&auto=format&fit=crop&w=2000&q=80')",
-                        transition: 'transform 0.9s ease',
-                    }}
-                />
-                <div className="absolute inset-0" style={{ background: 'linear-gradient(160deg, rgba(8,20,55,0.30) 0%, rgba(4,10,35,0.86) 100%)' }} />
-
-                <div className="relative z-10 flex flex-col items-center justify-center h-full p-10 xl:p-14 w-full text-center">
-                    {/* Logo */}
-                    <div className="flex items-center justify-center gap-3 mb-10">
+                <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1436491865332-7a61a109cc05?ixlib=rb-4.0.3&auto=format&fit=crop&w=2000&q=80')] bg-cover bg-center" />
+                <div className="absolute inset-0 bg-gradient-to-br from-slate-900/40 via-slate-950/70 to-slate-950/90" />
+                <div className="relative z-10 flex flex-col items-center justify-center h-full p-10 text-center text-white">
+                    <div className="mb-10 flex items-center gap-3">
                         <img
                             src={logoImg}
                             alt="FlyViet"
-                            style={{ width: 40, height: 40, objectFit: 'contain', borderRadius: 10, filter: 'drop-shadow(0 8px 14px rgba(0,0,0,0.22))' }}
+                            className="h-10 w-10 rounded-lg object-contain"
                             onError={(e) => {
                                 e.currentTarget.style.display = 'none';
                             }}
                         />
-                        <span style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 20, fontWeight: 800, color: 'white', letterSpacing: '0.12em', textTransform: 'uppercase' }}>
-                            FlyViet
-                        </span>
+                        <span className="text-xl font-extrabold tracking-[0.12em] uppercase">FlyViet</span>
                     </div>
-
-                    {/* Headline */}
-                    <div className="flex flex-col items-center">
-                        <h1 style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 'clamp(28px,2.8vw,38px)', fontWeight: 800, color: 'white', lineHeight: 1.25, margin: '0 0 16px', letterSpacing: '-0.01em', textAlign: 'center' }}>
-                            Bắt đầu<br />
-                            <span style={{ color: '#7dd3fc' }}>Hành trình mới.</span>
-                        </h1>
-                        <p style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 15, fontWeight: 500, color: 'rgba(255,255,255,0.85)', lineHeight: 1.7, margin: '0 auto 36px', maxWidth: 320, textAlign: 'center' }}>
-                            Trở thành thành viên của FlyViet để nhận thông báo về vé máy bay giá rẻ và quản lý chuyến bay chuyên nghiệp nhất.
-                        </p>
-                    </div>
+                    <h1 className="mb-4 text-4xl font-extrabold leading-tight">
+                        Bắt đầu <br />
+                        <span className="text-sky-300">Hành trình mới.</span>
+                    </h1>
+                    <p className="max-w-sm text-sm font-medium text-white/85 leading-7">
+                        Trở thành thành viên của FlyViet để nhận thông báo vé máy bay giá tốt và quản lý chuyến bay tiện lợi hơn.
+                    </p>
                 </div>
             </div>
 
-            {/* ── RIGHT: Form ── */}
-            <div className="flex-1 flex items-center justify-center p-6 sm:p-10" style={{ background: '#f0f4f8', overflowY: 'auto' }}>
-                <div style={{ width: '100%', maxWidth: 460, margin: 'auto' }}>
-
-                    {/* Mobile logo */}
+            <div className="flex-1 flex items-center justify-center p-6 sm:p-10">
+                <div className="w-full max-w-[460px]">
                     <div className="lg:hidden flex items-center justify-center gap-3 mb-8">
                         <img
                             src={logoImg}
                             alt="FlyViet"
-                            style={{ width: 36, height: 36, objectFit: 'contain', borderRadius: 8 }}
+                            className="h-9 w-9 rounded-lg object-contain"
                             onError={(e) => {
                                 e.currentTarget.style.display = 'none';
                             }}
                         />
-                        <span style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 18, fontWeight: 800, color: '#111827', letterSpacing: '0.1em', textTransform: 'uppercase' }}>FlyViet</span>
+                        <span className="text-lg font-extrabold tracking-[0.1em] uppercase text-slate-900">FlyViet</span>
                     </div>
 
-                    {/* Card */}
-                    <div style={{ background: '#ffffff', borderRadius: 20, border: '1.5px solid #e5e7eb', padding: '40px 40px 36px', boxShadow: '0 16px 56px -16px rgba(0,0,0,0.14)' }}>
-
-                        {/* Heading */}
-                        <div style={{ marginBottom: 28 }}>
-                            <h2 style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 28, fontWeight: 800, color: '#111827', margin: '0 0 8px', letterSpacing: '-0.02em' }}>Tạo tài khoản</h2>
-                            <p style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 15, color: '#6b7280', margin: 0, fontWeight: 500 }}>
+                    <div className="rounded-2xl border border-slate-200 bg-white p-8 sm:p-10 shadow-xl">
+                        <div className="mb-7">
+                            <h2 className="text-3xl font-extrabold tracking-tight text-slate-900">Tạo tài khoản</h2>
+                            <p className="mt-2 text-sm font-medium text-slate-500">
                                 Tham gia FlyViet chỉ với vài bước đơn giản.
                             </p>
                         </div>
 
-                        {/* Error Message */}
                         {error && (
-                            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, background: '#fef2f2', border: '1.5px solid #fecaca', borderRadius: 10, padding: '11px 14px', marginBottom: 22, fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 13.5, color: '#b91c1c', fontWeight: 600 }}>
-                                <svg style={{ width: 16, height: 16, flexShrink: 0, marginTop: 1 }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <div className="mb-5 flex items-start gap-2.5 rounded-xl border border-red-200 bg-red-50 px-3.5 py-3 text-sm font-semibold text-red-700">
+                                <svg className="mt-0.5 h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                                 </svg>
                                 <span>{error}</span>
                             </div>
                         )}
 
-                        {/* Success Message */}
                         {success && (
-                            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, background: '#f0fdf4', border: '1.5px solid #bbf7d0', borderRadius: 10, padding: '11px 14px', marginBottom: 22, fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 13.5, color: '#15803d', fontWeight: 600 }}>
-                                <svg style={{ width: 16, height: 16, flexShrink: 0, marginTop: 1 }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <div className="mb-5 flex items-start gap-2.5 rounded-xl border border-emerald-200 bg-emerald-50 px-3.5 py-3 text-sm font-semibold text-emerald-700">
+                                <svg className="mt-0.5 h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
                                 </svg>
                                 <span>{success}</span>
                             </div>
                         )}
 
-                        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-
-                            {/* Name */}
-                            <div className="fv-input-field">
-                                <label>Họ và tên</label>
-                                <div className="fv-input-wrap">
-                                    <svg className="fv-icon-left" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                                    </svg>
-                                    <input
-                                        type="text"
-                                        value={name}
-                                        onChange={(e) => setName(e.target.value)}
-                                        placeholder="Nguyễn Văn A"
-                                        required
-                                    />
-                                </div>
+                        <form onSubmit={handleSubmit} className="space-y-4">
+                            <div>
+                                <label className="mb-2 block text-sm font-bold text-slate-700">Họ và tên</label>
+                                <input
+                                    type="text"
+                                    value={name}
+                                    onChange={(e) => setName(e.target.value)}
+                                    placeholder="Nguyễn Văn A"
+                                    required
+                                    className="h-12 w-full rounded-xl border border-slate-200 px-4 text-sm font-medium text-slate-900 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
+                                />
                             </div>
 
-                            {/* Email */}
-                            <div className="fv-input-field">
-                                <label>Email của bạn</label>
-                                <div className="fv-input-wrap">
-                                    <svg className="fv-icon-left" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l9 6 9-6M4 6h16a2 2 0 012 2v10a2 2 0 01-2 2H4a2 2 0 01-2-2V8a2 2 0 012-2z" />
-                                    </svg>
-                                    <input
-                                        type="email"
-                                        value={email}
-                                        onChange={(e) => setEmail(e.target.value)}
-                                        placeholder="name@company.com"
-                                        required
-                                        autoComplete="email"
-                                    />
-                                </div>
+                            <div>
+                                <label className="mb-2 block text-sm font-bold text-slate-700">Email của bạn</label>
+                                <input
+                                    type="email"
+                                    value={email}
+                                    onChange={(e) => setEmail(e.target.value)}
+                                    placeholder="name@company.com"
+                                    required
+                                    autoComplete="email"
+                                    className="h-12 w-full rounded-xl border border-slate-200 px-4 text-sm font-medium text-slate-900 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
+                                />
                             </div>
 
-                            {/* Password */}
-                            <div className="fv-input-field">
-                                <label>Mật khẩu</label>
-                                <div className="fv-input-wrap">
-                                    <svg className="fv-icon-left" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 11c1.657 0 3-1.343 3-3S13.657 5 12 5 9 6.343 9 8s1.343 3 3 3zm0 0v2m-6 4h12a2 2 0 002-2v-1a6 6 0 00-12 0v1a2 2 0 002 2z" />
-                                    </svg>
+                            <div>
+                                <label className="mb-2 block text-sm font-bold text-slate-700">Mật khẩu</label>
+                                <div className="relative">
                                     <input
                                         type={showPassword ? 'text' : 'password'}
                                         value={password}
@@ -285,29 +147,30 @@ const Register = () => {
                                         placeholder="Ít nhất 6 ký tự"
                                         required
                                         autoComplete="new-password"
-                                        className="has-right-btn"
+                                        className="h-12 w-full rounded-xl border border-slate-200 px-4 pr-11 text-sm font-medium text-slate-900 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
                                     />
                                     <button
                                         type="button"
-                                        className="fv-eye-btn"
+                                        className="absolute inset-y-0 right-0 flex w-11 items-center justify-center text-slate-400 hover:text-slate-600"
                                         onClick={() => setShowPassword((v) => !v)}
                                     >
                                         {showPassword ? (
-                                            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 3l18 18M10.58 10.58a2 2 0 002.83 2.83M9.88 4.24A10.94 10.94 0 0112 4c5.52 0 10 4 11 8-.39 1.56-1.33 3.02-2.68 4.2M6.23 6.23C4.45 7.55 3.17 9.21 3 12c1 4 5.48 8 11 8 1.55 0 3.05-.28 4.42-.8" /></svg>
+                                            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 3l18 18M10.58 10.58a2 2 0 002.83 2.83M9.88 4.24A10.94 10.94 0 0112 4c5.52 0 10 4 11 8-.39 1.56-1.33 3.02-2.68 4.2M6.23 6.23C4.45 7.55 3.17 9.21 3 12c1 4 5.48 8 11 8 1.55 0 3.05-.28 4.42-.8" />
+                                            </svg>
                                         ) : (
-                                            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.46 12C3.73 7.94 7.52 5 12 5c4.48 0 8.27 2.94 9.54 7-1.27 4.06-5.06 7-9.54 7-4.48 0-8.27-2.94-9.54-7z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15a3 3 0 100-6 3 3 0 000 6z" /></svg>
+                                            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.46 12C3.73 7.94 7.52 5 12 5c4.48 0 8.27 2.94 9.54 7-1.27 4.06-5.06 7-9.54 7-4.48 0-8.27-2.94-9.54-7z" />
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15a3 3 0 100-6 3 3 0 000 6z" />
+                                            </svg>
                                         )}
                                     </button>
                                 </div>
                             </div>
 
-                            {/* Confirm Password */}
-                            <div className="fv-input-field">
-                                <label>Xác nhận mật khẩu</label>
-                                <div className="fv-input-wrap">
-                                    <svg className="fv-icon-left" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                                    </svg>
+                            <div>
+                                <label className="mb-2 block text-sm font-bold text-slate-700">Xác nhận mật khẩu</label>
+                                <div className="relative">
                                     <input
                                         type={showConfirmPassword ? 'text' : 'password'}
                                         value={confirmPassword}
@@ -315,46 +178,48 @@ const Register = () => {
                                         placeholder="Nhập lại mật khẩu"
                                         required
                                         autoComplete="new-password"
-                                        className="has-right-btn"
+                                        className="h-12 w-full rounded-xl border border-slate-200 px-4 pr-11 text-sm font-medium text-slate-900 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
                                     />
                                     <button
                                         type="button"
-                                        className="fv-eye-btn"
+                                        className="absolute inset-y-0 right-0 flex w-11 items-center justify-center text-slate-400 hover:text-slate-600"
                                         onClick={() => setShowConfirmPassword((v) => !v)}
                                     >
                                         {showConfirmPassword ? (
-                                            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 3l18 18M10.58 10.58a2 2 0 002.83 2.83M9.88 4.24A10.94 10.94 0 0112 4c5.52 0 10 4 11 8-.39 1.56-1.33 3.02-2.68 4.2M6.23 6.23C4.45 7.55 3.17 9.21 3 12c1 4 5.48 8 11 8 1.55 0 3.05-.28 4.42-.8" /></svg>
+                                            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 3l18 18M10.58 10.58a2 2 0 002.83 2.83M9.88 4.24A10.94 10.94 0 0112 4c5.52 0 10 4 11 8-.39 1.56-1.33 3.02-2.68 4.2M6.23 6.23C4.45 7.55 3.17 9.21 3 12c1 4 5.48 8 11 8 1.55 0 3.05-.28 4.42-.8" />
+                                            </svg>
                                         ) : (
-                                            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.46 12C3.73 7.94 7.52 5 12 5c4.48 0 8.27 2.94 9.54 7-1.27 4.06-5.06 7-9.54 7-4.48 0-8.27-2.94-9.54-7z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15a3 3 0 100-6 3 3 0 000 6z" /></svg>
+                                            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.46 12C3.73 7.94 7.52 5 12 5c4.48 0 8.27 2.94 9.54 7-1.27 4.06-5.06 7-9.54 7-4.48 0-8.27-2.94-9.54-7z" />
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15a3 3 0 100-6 3 3 0 000 6z" />
+                                            </svg>
                                         )}
                                     </button>
                                 </div>
                             </div>
 
-                            {/* Submit */}
                             <button
                                 type="submit"
                                 disabled={loading}
-                                className="fv-submit-btn"
-                                style={{ marginTop: 8 }}
+                                className="mt-2 h-12 w-full rounded-xl bg-blue-700 text-sm font-bold text-white transition hover:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-70"
                             >
                                 {loading ? 'Đang xử lý...' : 'Đăng ký ngay'}
                             </button>
                         </form>
 
-                        {/* Footer */}
-                        <div style={{ marginTop: 28, paddingTop: 20, borderTop: '1px solid #f3f4f6', textAlign: 'center' }}>
-                            <p style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 14.5, color: '#6b7280', margin: '0 0 10px', fontWeight: 600 }}>
+                        <div className="mt-7 border-t border-slate-100 pt-5 text-center">
+                            <p className="text-sm font-semibold text-slate-500">
                                 Đã có tài khoản?{' '}
-                                <Link to="/login" style={{ color: '#2563eb', fontWeight: 800, textDecoration: 'none' }}>
+                                <Link to="/login" className="font-extrabold text-blue-600 hover:text-blue-700">
                                     Đăng nhập ngay
                                 </Link>
                             </p>
-                            <p style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 13, color: '#9ca3af', lineHeight: 1.65, margin: 0, fontWeight: 500 }}>
+                            <p className="mt-2 text-xs font-medium leading-6 text-slate-400">
                                 Bằng việc đăng ký, bạn đồng ý với{' '}
-                                <a href="#" style={{ color: '#6b7280', fontWeight: 700, textDecoration: 'none' }}>Điều khoản dịch vụ</a>
+                                <a href="#" className="font-bold text-slate-500 hover:text-slate-700">Điều khoản dịch vụ</a>
                                 {' '}và{' '}
-                                <a href="#" style={{ color: '#6b7280', fontWeight: 700, textDecoration: 'none' }}>Chính sách bảo mật</a>.
+                                <a href="#" className="font-bold text-slate-500 hover:text-slate-700">Chính sách bảo mật</a>.
                             </p>
                         </div>
                     </div>

@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { useSearchParams, useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
-// import './Auth.css';
 
 const VerifyEmail = () => {
     const [searchParams] = useSearchParams();
@@ -32,21 +31,22 @@ const VerifyEmail = () => {
     };
 
     return (
-        <div className="auth-centered-wrapper">
-            <div className="auth-centered-card" style={{ textAlign: 'center' }}>
-                <Link to="/" className="auth-logo" style={{ justifyContent: 'center', marginBottom: '24px' }}>
-                    ✈ FlightGreen <span className="logo-dot"></span>
+        <div className="min-h-screen bg-slate-100 px-4 py-10 font-sans">
+            <div className="mx-auto mt-10 w-full max-w-md rounded-2xl border border-slate-200 bg-white p-7 text-center shadow-sm">
+                <Link to="/" className="mb-6 flex items-center justify-center gap-2 text-slate-800">
+                    <span className="text-lg">✈</span>
+                    <span className="text-xl font-black tracking-wide">FLYVIET</span>
                 </Link>
 
                 {/* Icon changes based on status */}
-                <div style={{ fontSize: '52px', marginBottom: '16px', lineHeight: 1 }}>
+                <div className="mb-4 text-5xl leading-none">
                     {status === 'success' ? '✅' : status === 'error' ? '❌' : '📧'}
                 </div>
 
-                <h2 className="auth-title" style={{ marginBottom: '8px' }}>
+                <h2 className="mb-2 text-2xl font-black text-slate-900">
                     {status === 'success' ? 'Xác thực thành công!' : status === 'error' ? 'Xác thực thất bại' : 'Xác thực tài khoản'}
                 </h2>
-                <p className="auth-subtitle" style={{ marginBottom: '24px' }}>
+                <p className="mb-6 text-sm text-slate-500">
                     {status === 'idle' && 'Nhấn nút bên dưới để hoàn tất xác thực tài khoản của bạn.'}
                     {status === 'loading' && 'Đang xử lý xác thực, vui lòng chờ...'}
                     {status === 'success' && 'Bạn có thể đăng nhập ngay bây giờ. Đang tự động chuyển hướng...'}
@@ -54,25 +54,24 @@ const VerifyEmail = () => {
                 </p>
 
                 {status === 'error' && (
-                    <div className="auth-error-msg" style={{ marginBottom: '20px', textAlign: 'left' }}>{message}</div>
+                    <div className="mb-5 rounded-xl border border-red-200 bg-red-50 px-3 py-2.5 text-left text-sm font-medium text-red-700">{message}</div>
                 )}
                 {status === 'success' && (
-                    <div className="auth-success-msg" style={{ marginBottom: '20px', textAlign: 'left' }}>{message}</div>
+                    <div className="mb-5 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2.5 text-left text-sm font-medium text-emerald-700">{message}</div>
                 )}
 
                 {status !== 'success' && (
                     <button
                         onClick={handleVerify}
-                        className="auth-btn primary-btn"
+                        className="mb-5 h-11 w-full rounded-xl bg-blue-700 text-sm font-bold text-white transition hover:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-70"
                         disabled={status === 'loading'}
-                        style={{ marginBottom: '20px' }}
                     >
                         {status === 'loading' ? 'Đang xác thực...' : 'Xác thực ngay'}
                     </button>
                 )}
 
-                <p className="auth-switch" style={{ marginTop: '8px' }}>
-                    <Link to="/login" className="forgot-link">← Quay lại trang Đăng nhập</Link>
+                <p className="mt-2 text-sm">
+                    <Link to="/login" className="font-semibold text-blue-600 hover:text-blue-700">← Quay lại trang Đăng nhập</Link>
                 </p>
             </div>
         </div>

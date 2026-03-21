@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { authService } from '../services/api';
-import '../App.css';
 
 const AdminDashboard = () => {
     const [flights, setFlights] = useState([]);
@@ -17,7 +16,8 @@ const AdminDashboard = () => {
 
     useEffect(() => {
         const currentUser = authService.getCurrentUser();
-        if (!currentUser || currentUser.role !== 'ADMIN') {
+        const role = currentUser?.user?.role ?? currentUser?.role;
+        if (!currentUser || role !== 'ADMIN') {
             navigate('/login');
             return;
         }
@@ -91,145 +91,145 @@ const AdminDashboard = () => {
     };
 
     return (
-        <div style={{ display: 'flex', minHeight: '100vh', background: '#f8fafc' }}>
-            {/* Sidebar */}
-            <aside style={{ width: '280px', background: '#1e293b', color: '#fff', padding: '32px 24px', position: 'sticky', top: 0, height: '100vh', display: 'flex', flexDirection: 'column' }}>
-                <Link to="/" className="app-logo" style={{ color: '#fff', marginBottom: '48px', fontSize: '20px' }}>
-                    <span style={{background: '#38bdf8', color: '#fff', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '8px', fontSize: '16px'}}>✈️</span>
+        <div className="min-h-screen bg-slate-50 font-sans lg:flex">
+            <aside className="w-full bg-slate-900 p-6 text-white lg:sticky lg:top-0 lg:h-screen lg:w-[280px]">
+                <Link to="/" className="mb-10 flex items-center gap-2 text-xl font-black">
+                    <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-cyan-400 text-base">✈️</span>
                     <span>AdminPanel</span>
                 </Link>
 
-                <nav style={{ display: 'flex', flexDirection: 'column', gap: '8px', flex: 1 }}>
-                    <div style={{ padding: '12px 16px', borderRadius: '8px', background: '#334155', color: '#38bdf8', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer' }}>
-                        <span>📊</span> Tổng quan
-                    </div>
-                    <div style={{ padding: '12px 16px', borderRadius: '8px', color: '#94a3b8', display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer' }}>
-                        <span>✈️</span> Quản lý chuyến bay
-                    </div>
-                    <div style={{ padding: '12px 16px', borderRadius: '8px', color: '#94a3b8', display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer' }}>
-                        <span>👤</span> Quản lý người dùng
-                    </div>
-                    <div style={{ padding: '12px 16px', borderRadius: '8px', color: '#94a3b8', display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer' }}>
-                        <span>🎫</span> Đơn đặt vé
-                    </div>
+                <nav className="flex flex-1 flex-col gap-2">
+                    <div className="flex items-center gap-2 rounded-lg bg-slate-700 px-4 py-3 font-semibold text-cyan-300"><span>📊</span> Tổng quan</div>
+                    <div className="flex items-center gap-2 rounded-lg px-4 py-3 text-slate-300"><span>✈️</span> Quản lý chuyến bay</div>
+                    <div className="flex items-center gap-2 rounded-lg px-4 py-3 text-slate-300"><span>👤</span> Quản lý người dùng</div>
+                    <div className="flex items-center gap-2 rounded-lg px-4 py-3 text-slate-300"><span>🎫</span> Đơn đặt vé</div>
                 </nav>
 
-                <div style={{ borderTop: '1px solid #334155', paddingTop: '24px', marginTop: '24px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
-                        <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: '#38bdf8', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '700' }}>A</div>
+                <div className="mt-6 border-t border-slate-700 pt-5">
+                    <div className="mb-4 flex items-center gap-3">
+                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-cyan-400 font-bold text-slate-900">A</div>
                         <div>
-                            <div style={{ fontSize: '14px', fontWeight: '600' }}>Admin</div>
-                            <div style={{ fontSize: '11px', color: '#94a3b8' }}>{user?.email}</div>
+                            <p className="text-sm font-semibold">Admin</p>
+                            <p className="text-xs text-slate-300">{user?.user?.email ?? user?.email}</p>
                         </div>
                     </div>
-                    <button onClick={handleLogout} style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #ef4444', background: 'transparent', color: '#ef4444', cursor: 'pointer', fontSize: '13px' }}>Đăng xuất</button>
+                    <button
+                        onClick={handleLogout}
+                        className="w-full rounded-lg border border-red-400 px-3 py-2 text-sm font-semibold text-red-300 transition hover:bg-red-400/10"
+                    >
+                        Đăng xuất
+                    </button>
                 </div>
             </aside>
 
-            {/* Main Content */}
-            <main style={{ flex: 1, padding: '40px', overflowY: 'auto' }}>
-                <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
+            <main className="flex-1 p-6 lg:p-10">
+                <header className="mb-8 flex flex-wrap items-center justify-between gap-4">
                     <div>
-                        <h1 style={{ fontSize: '28px', fontWeight: '800', color: '#1e293b', marginBottom: '4px' }}>Quản lý Chuyến Bay</h1>
-                        <p style={{ color: '#64748b' }}>Thêm, sửa hoặc xóa các chuyến bay trong hệ thống của bạn.</p>
+                        <h1 className="text-3xl font-black text-slate-900">Quản lý Chuyến Bay</h1>
+                        <p className="mt-1 text-sm text-slate-500">Thêm, sửa hoặc xóa các chuyến bay trong hệ thống của bạn.</p>
                     </div>
-                    <button onClick={() => navigate('/')} className="btn btn-outline" style={{ background: '#fff' }}>Xem Trang Chủ</button>
+                    <button
+                        onClick={() => navigate('/')}
+                        className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
+                    >
+                        Xem Trang Chủ
+                    </button>
                 </header>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '380px 1fr', gap: '24px', alignItems: 'start' }}>
-                    {/* Form Side */}
-                    <div className="card" style={{ padding: '32px', position: 'sticky', top: '40px' }}>
-                        <h3 style={{ fontSize: '18px', fontWeight: '700', marginBottom: '24px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <div className="grid gap-6 xl:grid-cols-[380px_1fr]">
+                    <div className="rounded-2xl border border-slate-200 bg-white p-6 xl:sticky xl:top-8">
+                        <h3 className="mb-5 text-lg font-bold text-slate-900">
                             {isEditing ? '✏️ Sửa thông tin' : '➕ Thêm chuyến bay'}
                         </h3>
-                        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                            <div className="input-group">
-                                <label style={{ fontSize: '12px', fontWeight: '700', color: '#64748b', textTransform: 'uppercase' }}>Số hiệu chuyến bay</label>
-                                <input name="flightNumber" value={currentFlight.flightNumber} onChange={handleInputChange} placeholder="VD: VN123" required style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: '14px' }} />
-                            </div>
-                            
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                                <div className="input-group">
-                                    <label style={{ fontSize: '12px', fontWeight: '700', color: '#64748b', textTransform: 'uppercase' }}>Điểm đi</label>
-                                    <input name="origin" value={currentFlight.origin} onChange={handleInputChange} placeholder="Hà Nội" required style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: '14px' }} />
-                                </div>
-                                <div className="input-group">
-                                    <label style={{ fontSize: '12px', fontWeight: '700', color: '#64748b', textTransform: 'uppercase' }}>Điểm đến</label>
-                                    <input name="destination" value={currentFlight.destination} onChange={handleInputChange} placeholder="TP. HCM" required style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: '14px' }} />
-                                </div>
+                        <form onSubmit={handleSubmit} className="space-y-4">
+                            <div>
+                                <label className="mb-2 block text-xs font-bold uppercase tracking-wide text-slate-500">Số hiệu chuyến bay</label>
+                                <input name="flightNumber" value={currentFlight.flightNumber} onChange={handleInputChange} placeholder="VD: VN123" required className="h-11 w-full rounded-lg border border-slate-200 px-3 text-sm outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-100" />
                             </div>
 
-                            <div className="input-group">
-                                <label style={{ fontSize: '12px', fontWeight: '700', color: '#64748b', textTransform: 'uppercase' }}>Giờ khởi hành</label>
-                                <input type="datetime-local" name="departureTime" value={currentFlight.departureTime} onChange={handleInputChange} required style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: '14px' }} />
-                            </div>
-
-                            <div className="input-group">
-                                <label style={{ fontSize: '12px', fontWeight: '700', color: '#64748b', textTransform: 'uppercase' }}>Giờ hạ cánh</label>
-                                <input type="datetime-local" name="arrivalTime" value={currentFlight.arrivalTime} onChange={handleInputChange} required style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: '14px' }} />
-                            </div>
-
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                                <div className="input-group">
-                                    <label style={{ fontSize: '12px', fontWeight: '700', color: '#64748b', textTransform: 'uppercase' }}>Giá (VNĐ)</label>
-                                    <input type="number" name="price" value={currentFlight.price} onChange={handleInputChange} required style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: '14px' }} />
+                            <div className="grid grid-cols-2 gap-3">
+                                <div>
+                                    <label className="mb-2 block text-xs font-bold uppercase tracking-wide text-slate-500">Điểm đi</label>
+                                    <input name="origin" value={currentFlight.origin} onChange={handleInputChange} placeholder="Hà Nội" required className="h-11 w-full rounded-lg border border-slate-200 px-3 text-sm outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-100" />
                                 </div>
-                                <div className="input-group">
-                                    <label style={{ fontSize: '12px', fontWeight: '700', color: '#64748b', textTransform: 'uppercase' }}>Số ghế</label>
-                                    <input type="number" name="availableSeats" value={currentFlight.availableSeats} onChange={handleInputChange} required style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: '14px' }} />
+                                <div>
+                                    <label className="mb-2 block text-xs font-bold uppercase tracking-wide text-slate-500">Điểm đến</label>
+                                    <input name="destination" value={currentFlight.destination} onChange={handleInputChange} placeholder="TP. HCM" required className="h-11 w-full rounded-lg border border-slate-200 px-3 text-sm outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-100" />
                                 </div>
                             </div>
 
-                            <div style={{ display: 'flex', gap: '12px', marginTop: '12px' }}>
-                                <button type="submit" className="btn btn-primary" style={{ flex: 1, padding: '14px' }}>
+                            <div>
+                                <label className="mb-2 block text-xs font-bold uppercase tracking-wide text-slate-500">Giờ khởi hành</label>
+                                <input type="datetime-local" name="departureTime" value={currentFlight.departureTime} onChange={handleInputChange} required className="h-11 w-full rounded-lg border border-slate-200 px-3 text-sm outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-100" />
+                            </div>
+
+                            <div>
+                                <label className="mb-2 block text-xs font-bold uppercase tracking-wide text-slate-500">Giờ hạ cánh</label>
+                                <input type="datetime-local" name="arrivalTime" value={currentFlight.arrivalTime} onChange={handleInputChange} required className="h-11 w-full rounded-lg border border-slate-200 px-3 text-sm outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-100" />
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-3">
+                                <div>
+                                    <label className="mb-2 block text-xs font-bold uppercase tracking-wide text-slate-500">Giá (VNĐ)</label>
+                                    <input type="number" name="price" value={currentFlight.price} onChange={handleInputChange} required className="h-11 w-full rounded-lg border border-slate-200 px-3 text-sm outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-100" />
+                                </div>
+                                <div>
+                                    <label className="mb-2 block text-xs font-bold uppercase tracking-wide text-slate-500">Số ghế</label>
+                                    <input type="number" name="availableSeats" value={currentFlight.availableSeats} onChange={handleInputChange} required className="h-11 w-full rounded-lg border border-slate-200 px-3 text-sm outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-100" />
+                                </div>
+                            </div>
+
+                            <div className="flex gap-3 pt-2">
+                                <button type="submit" className="h-11 flex-1 rounded-lg bg-blue-700 text-sm font-bold text-white transition hover:bg-blue-800">
                                     {isEditing ? 'Cập nhật' : 'Thêm mới'}
                                 </button>
                                 {isEditing && (
-                                    <button onClick={resetForm} type="button" className="btn btn-outline" style={{ flex: 1, padding: '14px', border: '1px solid #cbd5e1', color: '#64748b' }}>Hủy</button>
+                                    <button onClick={resetForm} type="button" className="h-11 flex-1 rounded-lg border border-slate-300 text-sm font-semibold text-slate-600 transition hover:bg-slate-100">
+                                        Hủy
+                                    </button>
                                 )}
                             </div>
                         </form>
                     </div>
 
-                    {/* Table Side */}
-                    <div className="card" style={{ padding: '0', overflow: 'hidden' }}>
-                        <div style={{ padding: '24px', borderBottom: '1px solid #f1f5f9', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <h3 style={{ fontSize: '16px', fontWeight: '700' }}>Danh sách chuyến bay</h3>
-                            {loading && <div className="spinner-sm" style={{ width: '20px', height: '20px', border: '2px solid #f3f3f3', borderTop: '2px solid #38bdf8', borderRadius: '50%', animation: 'spin 1s linear infinite' }}></div>}
+                    <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
+                        <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4">
+                            <h3 className="text-base font-bold text-slate-900">Danh sách chuyến bay</h3>
+                            {loading && <div className="h-5 w-5 animate-spin rounded-full border-2 border-slate-200 border-t-blue-500" />}
                         </div>
-                        <div style={{ overflowX: 'auto' }}>
-                            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                        <div className="overflow-x-auto">
+                            <table className="w-full border-collapse">
                                 <thead>
-                                    <tr style={{ background: '#f8fafc', borderBottom: '1px solid #f1f5f9' }}>
-                                        <th style={{ padding: '16px', textAlign: 'left', fontSize: '12px', fontWeight: '700', color: '#64748b', textTransform: 'uppercase' }}>Số hiệu</th>
-                                        <th style={{ padding: '16px', textAlign: 'left', fontSize: '12px', fontWeight: '700', color: '#64748b', textTransform: 'uppercase' }}>Tuyến đường</th>
-                                        <th style={{ padding: '16px', textAlign: 'left', fontSize: '12px', fontWeight: '700', color: '#64748b', textTransform: 'uppercase' }}>Giá</th>
-                                        <th style={{ padding: '16px', textAlign: 'left', fontSize: '12px', fontWeight: '700', color: '#64748b', textTransform: 'uppercase' }}>Ghế</th>
-                                        <th style={{ padding: '16px', textAlign: 'center', fontSize: '12px', fontWeight: '700', color: '#64748b', textTransform: 'uppercase' }}>Hành động</th>
+                                    <tr className="border-b border-slate-100 bg-slate-50 text-left">
+                                        <th className="px-4 py-3 text-xs font-bold uppercase tracking-wide text-slate-500">Số hiệu</th>
+                                        <th className="px-4 py-3 text-xs font-bold uppercase tracking-wide text-slate-500">Tuyến đường</th>
+                                        <th className="px-4 py-3 text-xs font-bold uppercase tracking-wide text-slate-500">Giá</th>
+                                        <th className="px-4 py-3 text-xs font-bold uppercase tracking-wide text-slate-500">Ghế</th>
+                                        <th className="px-4 py-3 text-center text-xs font-bold uppercase tracking-wide text-slate-500">Hành động</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {flights.map(flight => (
-                                        <tr key={flight.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
-                                            <td style={{ padding: '16px', fontSize: '14px', fontWeight: '600' }}>{flight.flightNumber}</td>
-                                            <td style={{ padding: '16px' }}>
-                                                <div style={{ fontSize: '14px', fontWeight: '500' }}>{flight.origin} → {flight.destination}</div>
-                                                <div style={{ fontSize: '12px', color: '#94a3b8' }}>{new Date(flight.departureTime).toLocaleDateString('vi-VN')}</div>
+                                    {flights.map((flight) => (
+                                        <tr key={flight.id} className="border-b border-slate-100 hover:bg-slate-50">
+                                            <td className="px-4 py-4 text-sm font-semibold text-slate-900">{flight.flightNumber}</td>
+                                            <td className="px-4 py-4">
+                                                <div className="text-sm font-semibold text-slate-800">{flight.origin} → {flight.destination}</div>
+                                                <div className="text-xs text-slate-400">{new Date(flight.departureTime).toLocaleDateString('vi-VN')}</div>
                                             </td>
-                                            <td style={{ padding: '16px', fontSize: '14px', fontWeight: '700', color: 'var(--accent)' }}>{flight.price.toLocaleString()} VNĐ</td>
-                                            <td style={{ padding: '16px', fontSize: '14px' }}>{flight.availableSeats}</td>
-                                            <td style={{ padding: '16px' }}>
-                                                <div style={{ display: 'flex', justifyContent: 'center', gap: '8px' }}>
-                                                    <button onClick={() => handleEdit(flight)} style={{ width: '32px', height: '32px', borderRadius: '6px', border: 'none', background: '#e0f2fe', color: '#0369a1', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }} title="Sửa">✏️</button>
-                                                    <button onClick={() => handleDelete(flight.id)} style={{ width: '32px', height: '32px', borderRadius: '6px', border: 'none', background: '#fee2e2', color: '#b91c1c', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }} title="Xóa">🗑️</button>
+                                            <td className="px-4 py-4 text-sm font-bold text-orange-500">{flight.price.toLocaleString()} VNĐ</td>
+                                            <td className="px-4 py-4 text-sm text-slate-700">{flight.availableSeats}</td>
+                                            <td className="px-4 py-4">
+                                                <div className="flex justify-center gap-2">
+                                                    <button onClick={() => handleEdit(flight)} className="flex h-8 w-8 items-center justify-center rounded-md bg-sky-100 text-sky-700" title="Sửa">✏️</button>
+                                                    <button onClick={() => handleDelete(flight.id)} className="flex h-8 w-8 items-center justify-center rounded-md bg-red-100 text-red-700" title="Xóa">🗑️</button>
                                                 </div>
                                             </td>
                                         </tr>
                                     ))}
                                     {flights.length === 0 && !loading && (
                                         <tr>
-                                            <td colSpan="5" style={{ padding: '48px', textAlign: 'center', color: '#94a3b8' }}>
-                                                <div style={{ fontSize: '24px', marginBottom: '12px' }}>✈️</div>
+                                            <td colSpan="5" className="px-4 py-12 text-center text-sm text-slate-400">
+                                                <div className="mb-2 text-2xl">✈️</div>
                                                 Chưa có chuyến bay nào trong hệ thống.
                                             </td>
                                         </tr>
@@ -240,11 +240,6 @@ const AdminDashboard = () => {
                     </div>
                 </div>
             </main>
-
-            <style>{`
-                @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-                tbody tr:hover { background: #f8fafc; }
-            `}</style>
         </div>
     );
 };

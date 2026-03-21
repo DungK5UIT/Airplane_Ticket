@@ -28,7 +28,8 @@ const AdminAuth = () => {
         try {
             if (isLogin) {
                 const response = await authService.login(email, password);
-                if (response.role !== 'ADMIN') {
+                const userRole = response?.user?.role ?? response?.role;
+                if (userRole !== 'ADMIN') {
                     setError('Truy cập bị từ chối. Tài khoản không có phân quyền Quản trị viên.');
                     authService.logout();
                 } else {
@@ -76,11 +77,7 @@ const AdminAuth = () => {
     return (
         <div className="min-h-screen flex font-sans bg-white text-slate-800">
             {/* Left Side: Image and Branding */}
-            <div className="hidden lg:flex lg:w-1/2 relative bg-cover bg-center overflow-hidden"
-                 style={{ 
-                     backgroundImage: "url('https://images.unsplash.com/photo-1436491865332-7a61a109cc05?ixlib=rb-4.0.3&auto=format&fit=crop&w=2074&q=80')" 
-                 }}
-            >
+            <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden bg-[url('https://images.unsplash.com/photo-1436491865332-7a61a109cc05?ixlib=rb-4.0.3&auto=format&fit=crop&w=2074&q=80')] bg-cover bg-center">
                 {/* Gradient Overlay */}
                 <div className="absolute inset-0 bg-blue-900/30 bg-gradient-to-t from-blue-950/90 via-blue-900/50 to-transparent"></div>
                 

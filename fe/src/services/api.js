@@ -1,6 +1,7 @@
 import axios from 'axios';
 
 const API_BASE_URL = 'http://localhost:8080';
+const STORAGE_KEY = 'user';
 
 const api = axios.create({
     baseURL: API_BASE_URL,
@@ -9,13 +10,27 @@ const api = axios.create({
     },
 });
 
+const normalizeAuthResponse = (payload) => {
+    const token = payload?.token ?? payload?.accessToken ?? payload?.access_token ?? null;
+    const user = payload?.user ?? null;
+    const role = user?.role ?? payload?.role ?? null;
+
+    return {
+        ...payload,
+        token,
+        user,
+        role,
+    };
+};
+
 export const authService = {
     login: async (email, password) => {
         const response = await api.post('/api/auth/login', { email, password });
-        if (response.data.token) {
-            localStorage.setItem('user', JSON.stringify(response.data));
+        const normalizedData = normalizeAuthResponse(response.data);
+        if (normalizedData.token) {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(normalizedData));
         }
-        return response.data;
+        return normalizedData;
     },
 
     register: async (name, email, password, role = 'USER') => {
@@ -34,11 +49,16 @@ export const authService = {
     },
 
     logout: () => {
-        localStorage.removeItem('user');
+        localStorage.removeItem(STORAGE_KEY);
     },
 
     getCurrentUser: () => {
-        return JSON.parse(localStorage.getItem('user'));
+        try {
+            return JSON.parse(localStorage.getItem(STORAGE_KEY));
+        } catch (error) {
+            localStorage.removeItem(STORAGE_KEY);
+            return null;
+        }
     },
 
     // Flight Services
@@ -55,7 +75,7 @@ export const authService = {
     },
 
     createFlight: async (flightData) => {
-        const user = JSON.parse(localStorage.getItem('user'));
+        const user = authService.getCurrentUser();
         const response = await api.post('/api/flights', flightData, {
             headers: {
                 'Authorization': `Bearer ${user.token}`
@@ -65,7 +85,7 @@ export const authService = {
     },
 
     updateFlight: async (id, flightData) => {
-        const user = JSON.parse(localStorage.getItem('user'));
+        const user = authService.getCurrentUser();
         const response = await api.put(`/api/flights/${id}`, flightData, {
             headers: {
                 'Authorization': `Bearer ${user.token}`
@@ -75,7 +95,7 @@ export const authService = {
     },
 
     deleteFlight: async (id) => {
-        const user = JSON.parse(localStorage.getItem('user'));
+        const user = authService.getCurrentUser();
         const response = await api.delete(`/api/flights/${id}`, {
             headers: {
                 'Authorization': `Bearer ${user.token}`

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
+import Footer from '../components/Footer';
 
 const formatMoneyVND = (value) => {
     if (value == null || Number.isNaN(Number(value))) return '—';
@@ -24,7 +25,7 @@ export default function Orders() {
     const totalPrice = state?.totalPrice || 0;
 
     const [contact, setContact] = useState({ name: '', email: '', phone: '' });
-    
+
     // Create initial passenger lists based on pax object from previous steps
     const [passengers, setPassengers] = useState(() => {
         const list = [];
@@ -82,7 +83,7 @@ export default function Orders() {
                 return;
             }
         }
-        
+
         alert('Đặt vé thành công! Bạn có thể chuyển sang gateway thanh toán từ đây.');
         // navigate('/payment', { state: { flight, pax, selectedSeats, totalPrice, contact, passengers } });
     };
@@ -101,35 +102,35 @@ export default function Orders() {
                             <div className="grid gap-4 md:grid-cols-2">
                                 <div className="md:col-span-2">
                                     <label className="mb-1.5 block text-sm font-bold text-slate-600">Họ và tên người liên hệ</label>
-                                    <input 
-                                        type="text" 
-                                        className="h-11 w-full rounded-xl border border-slate-200 px-3 text-sm font-medium outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-100" 
-                                        placeholder="Ví dụ: NGUYEN VAN A" 
+                                    <input
+                                        type="text"
+                                        className="h-11 w-full rounded-xl border border-slate-200 px-3 text-sm font-medium outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
+                                        placeholder="Ví dụ: NGUYEN VAN A"
                                         value={contact.name}
                                         onChange={e => handleContactChange('name', e.target.value)}
-                                        required 
+                                        required
                                     />
                                 </div>
                                 <div>
                                     <label className="mb-1.5 block text-sm font-bold text-slate-600">Số điện thoại</label>
-                                    <input 
-                                        type="tel" 
-                                        className="h-11 w-full rounded-xl border border-slate-200 px-3 text-sm font-medium outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-100" 
-                                        placeholder="Ví dụ: 0901234567" 
+                                    <input
+                                        type="tel"
+                                        className="h-11 w-full rounded-xl border border-slate-200 px-3 text-sm font-medium outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
+                                        placeholder="Ví dụ: 0901234567"
                                         value={contact.phone}
                                         onChange={e => handleContactChange('phone', e.target.value)}
-                                        required 
+                                        required
                                     />
                                 </div>
                                 <div>
                                     <label className="mb-1.5 block text-sm font-bold text-slate-600">Email</label>
-                                    <input 
-                                        type="email" 
-                                        className="h-11 w-full rounded-xl border border-slate-200 px-3 text-sm font-medium outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-100" 
-                                        placeholder="Ví dụ: email@domain.com" 
+                                    <input
+                                        type="email"
+                                        className="h-11 w-full rounded-xl border border-slate-200 px-3 text-sm font-medium outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
+                                        placeholder="Ví dụ: email@domain.com"
                                         value={contact.email}
                                         onChange={e => handleContactChange('email', e.target.value)}
-                                        required 
+                                        required
                                     />
                                 </div>
                             </div>
@@ -143,7 +144,7 @@ export default function Orders() {
                             <p className="mb-5 text-sm text-slate-500">
                                 Vui lòng điền tên in hoa không dấu và kiểm tra kỹ ngày sinh.
                             </p>
-                            
+
                             {passengers.map((p, idx) => (
                                 <div key={idx} className="mb-4 rounded-2xl border border-slate-200 bg-slate-50 p-5 last:mb-0">
                                     <div className="mb-4 flex items-center gap-2 text-base font-extrabold text-slate-900">
@@ -157,7 +158,7 @@ export default function Orders() {
                                     <div className="grid gap-4 md:grid-cols-2">
                                         <div>
                                             <label className="mb-1.5 block text-sm font-bold text-slate-600">Danh xưng</label>
-                                            <select 
+                                            <select
                                                 className="h-11 w-full rounded-xl border border-slate-200 px-3 text-sm font-medium outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
                                                 value={p.title}
                                                 onChange={e => handlePaxChange(idx, 'title', e.target.value)}
@@ -180,24 +181,24 @@ export default function Orders() {
 
                                         <div>
                                             <label className="mb-1.5 block text-sm font-bold text-slate-600">Họ và tên (In hoa không dấu)</label>
-                                            <input 
-                                                type="text" 
-                                                className="h-11 w-full rounded-xl border border-slate-200 px-3 text-sm font-medium outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-100" 
-                                                placeholder="VD: NGUYEN VAN A" 
+                                            <input
+                                                type="text"
+                                                className="h-11 w-full rounded-xl border border-slate-200 px-3 text-sm font-medium outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
+                                                placeholder="VD: NGUYEN VAN A"
                                                 value={p.fullName}
                                                 onChange={e => handlePaxChange(idx, 'fullName', e.target.value.toUpperCase())}
-                                                required 
+                                                required
                                             />
                                         </div>
 
                                         <div>
                                             <label className="mb-1.5 block text-sm font-bold text-slate-600">Ngày sinh</label>
-                                            <input 
-                                                type="date" 
-                                                className="h-11 w-full rounded-xl border border-slate-200 px-3 text-sm font-medium outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-100" 
+                                            <input
+                                                type="date"
+                                                className="h-11 w-full rounded-xl border border-slate-200 px-3 text-sm font-medium outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
                                                 value={p.dob}
                                                 onChange={e => handlePaxChange(idx, 'dob', e.target.value)}
-                                                required 
+                                                required
                                             />
                                         </div>
                                     </div>
@@ -218,7 +219,7 @@ export default function Orders() {
                 {/* Right Panel */}
                 <div className="h-fit rounded-2xl border border-slate-200 bg-white p-6 shadow-sm lg:sticky lg:top-[100px]">
                     <h2 className="mb-4 text-lg font-black text-slate-900">Tóm tắt chuyến bay</h2>
-                    
+
                     <div className="mb-4 border-b border-dashed border-slate-200 pb-4">
                         <div className="mb-3 flex items-center justify-between">
                             <div className="text-lg font-black">{flight.origin}</div>
@@ -266,6 +267,7 @@ export default function Orders() {
                     </div>
                 </div>
             </div>
+            <Footer />
         </div>
     );
 }

@@ -1,5 +1,6 @@
 import React from 'react';
 import Navbar from '../components/Navbar';
+import Footer from '../components/Footer';
 import { authService } from '../services/api';
 
 export default function Profile() {
@@ -23,6 +24,7 @@ export default function Profile() {
                     </div>
                 </div>
             </div>
+            <Footer />
         </div>
     );
 }

@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { authService } from '../services/api';
+import api, { authService } from '../services/api';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 
@@ -24,17 +24,39 @@ import visaLogo from '../assets/visa.jpg';
 import vpbankLogo from '../assets/vpbank.jpg';
 import zalopayLogo from '../assets/zalopay.jpg';
 
+// --- Các Icon SVG dùng trong thanh tìm kiếm ---
+const PlaneTakeoffIcon = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 22h20" /><path d="M6.36 17.4 4 17l-2-4 1.1-.55a2 2 0 0 1 1.8 0l.17.1a2 2 0 0 0 1.8 0L8 12l5-5 1.5-.5a2 2 0 0 1 2.81.7l4 5.6c.55.77.46 1.81-.28 2.45L12 21Z" /></svg>
+);
+const PlaneLandingIcon = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 22h20" /><path d="M2 15h20" /><path d="M10 15V8.5a2.5 2.5 0 0 1 5 0V15" /><path d="M14 15l4-5 3.3.66a2 2 0 0 1 1.56 2.3l-.56 2.04" /></svg>
+);
+const CalendarIcon = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="18" x="3" y="4" rx="2" ry="2" /><line x1="16" x2="16" y1="2" y2="6" /><line x1="8" x2="8" y1="2" y2="6" /><line x1="3" x2="21" y1="10" y2="10" /></svg>
+);
+const UserIcon = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>
+);
+
 const Home = () => {
     const [origin, setOrigin] = useState('SGN');
     const [destination, setDestination] = useState('HAN');
     const [departureDate, setDepartureDate] = useState('');
-    const [pax, setPax] = useState({ adult: 2, child: 1, infant: 0 });
+    const [pax, setPax] = useState({ adult: 1, child: 0, infant: 0 });
     const [paxOpen, setPaxOpen] = useState(false);
     const paxRef = useRef(null);
     const [loading, setLoading] = useState(false);
     const [activeServiceTab, setActiveServiceTab] = useState('Trước khi đặt vé');
     const navigate = useNavigate();
     const totalPassengers = pax.adult + pax.child + pax.infant;
+
+    const [airports, setAirports] = useState([]);
+    const [originOpen, setOriginOpen] = useState(false);
+    const [destOpen, setDestOpen] = useState(false);
+    const [searchOriginText, setSearchOriginText] = useState('');
+    const [searchDestText, setSearchDestText] = useState('');
+    const originRef = useRef(null);
+    const destRef = useRef(null);
 
     const paxLabel = (() => {
         const parts = [];
@@ -44,27 +66,56 @@ const Home = () => {
         return parts.join(', ') || '1 Người lớn';
     })();
 
+    const selectedOrigin = airports.find(a => a.maIATA === origin) || null;
+    const selectedDest = airports.find(a => a.maIATA === destination) || null;
+
+    const filteredOriginAirports = airports.filter(a =>
+        (a.thanhPho && a.thanhPho.toLowerCase().includes(searchOriginText.toLowerCase())) ||
+        (a.maIATA && a.maIATA.toLowerCase().includes(searchOriginText.toLowerCase())) ||
+        (a.tenSanBay && a.tenSanBay.toLowerCase().includes(searchOriginText.toLowerCase()))
+    );
+
+    const filteredDestAirports = airports.filter(a =>
+        (a.thanhPho && a.thanhPho.toLowerCase().includes(searchDestText.toLowerCase())) ||
+        (a.maIATA && a.maIATA.toLowerCase().includes(searchDestText.toLowerCase())) ||
+        (a.tenSanBay && a.tenSanBay.toLowerCase().includes(searchDestText.toLowerCase()))
+    );
+
     useEffect(() => {
         authService.getCurrentUser();
+
+        const fetchAirports = async () => {
+            try {
+                const response = await api.get('/api/airports');
+                setAirports(response.data);
+            } catch (error) {
+                console.error("Failed to fetch airports", error);
+            }
+        };
+        fetchAirports();
     }, []);
 
     useEffect(() => {
         const onDown = (e) => {
-            if (!paxOpen) return;
-            if (!paxRef.current) return;
-            if (!paxRef.current.contains(e.target)) setPaxOpen(false);
+            if (paxOpen && paxRef.current && !paxRef.current.contains(e.target)) setPaxOpen(false);
+            if (originOpen && originRef.current && !originRef.current.contains(e.target)) setOriginOpen(false);
+            if (destOpen && destRef.current && !destRef.current.contains(e.target)) setDestOpen(false);
         };
         document.addEventListener('mousedown', onDown);
         return () => document.removeEventListener('mousedown', onDown);
-    }, [paxOpen]);
+    }, [paxOpen, originOpen, destOpen]);
 
     const handleSearch = (e) => {
         e.preventDefault();
         setLoading(true);
+
+        const originCity = selectedOrigin ? selectedOrigin.thanhPho : origin;
+        const destCity = selectedDest ? selectedDest.thanhPho : destination;
+
         navigate('/flight', {
             state: {
-                origin: origin.trim(),
-                destination: destination.trim(),
+                origin: originCity.trim(),
+                destination: destCity.trim(),
                 date: departureDate,
                 pax,
             },
@@ -73,10 +124,9 @@ const Home = () => {
     };
 
     const destinations = [
-        { name: 'Phú Quốc', tag: 'Đảo ngọc', price: '799.000đ', img: 'https://images.unsplash.com/photo-1552465011-b4e21bf6e79a?auto=format&fit=crop&w=800&q=80' },
-        { name: 'Đà Nẵng', tag: 'Thành phố biển', price: '599.000đ', img: 'https://images.unsplash.com/photo-1559592413-7cec4d0cae2b?auto=format&fit=crop&w=800&q=80' },
-        { name: 'Nha Trang', tag: 'Nghỉ dưỡng', price: '699.000đ', img: 'https://images.unsplash.com/photo-1583417319070-4a69db38a482?auto=format&fit=crop&w=800&q=80' },
-        { name: 'Hạ Long', tag: 'Kỳ quan', price: '899.000đ', img: 'https://images.unsplash.com/photo-1528127269322-539801943592?auto=format&fit=crop&w=800&q=80' },
+        { name: 'Đà Nẵng', tag: 'Thành phố biển', price: '790.000 VNĐ', img: 'https://images.unsplash.com/photo-1559592413-7cec4d0cae2b?auto=format&fit=crop&w=800&q=80' },
+        { name: 'Phú Quốc', tag: 'Đảo ngọc', price: '1.100.000 VNĐ', img: 'https://images.unsplash.com/photo-1552465011-b4e21bf6e79a?auto=format&fit=crop&w=800&q=80' },
+        { name: 'Hà Nội', tag: 'Thủ đô', price: '850.000 VNĐ', img: 'https://images.unsplash.com/photo-1528127269322-539801943592?auto=format&fit=crop&w=800&q=80' },
     ];
 
     const serviceTabs = ['Trước khi đặt vé', 'Khi đặt vé', 'Sau khi đặt vé', 'Lên kế hoạch chuyến đi'];
@@ -151,7 +201,14 @@ const Home = () => {
     ];
 
     return (
-        <div className="min-h-screen bg-slate-50 font-sans text-slate-900">
+        <div className="min-h-screen bg-slate-50 text-slate-900" style={{ fontFamily: "'Nunito', sans-serif" }}>
+            {/* Nhúng font Nunito từ Google Fonts giống font Vietjet */}
+            <style>
+                {`
+                    @import url('https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,700&display=swap');
+                `}
+            </style>
+
             <Navbar transparent={true} />
 
             <section className="relative flex min-h-[420px] items-center overflow-hidden sm:min-h-[520px]">
@@ -160,45 +217,109 @@ const Home = () => {
                     src="https://inkythuatso.com/uploads/thumbnails/800/2023/02/hinh-anh-may-bay-tren-bau-troi-inkythuatso-1-07-11-33-06.jpg"
                     alt="Hình ảnh máy bay trên bầu trời xanh"
                 />
-                <div className="absolute inset-0 bg-gradient-to-r from-slate-900/75 to-slate-900/20" />
-                <div className="relative z-10 px-[8vw] py-12">
-                    <p className="mb-4 text-[11px] uppercase tracking-[0.22em] text-white/60">✈ Bay không giới hạn</p>
+                <div className="absolute inset-0 bg-gradient-to-r from-slate-900/80 to-slate-900/10" />
+                <div className="relative z-10 px-[8vw] py-12 w-full max-w-[1400px] mx-auto">
+                    <div className="flex items-center gap-2 mb-4 text-xs font-bold uppercase tracking-[0.15em] text-yellow-500">
+                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M10 2a8 8 0 100 16 8 8 0 000-16zm.707 11.293a1 1 0 01-1.414 0L6.586 10.586A1 1 0 017.5 8h5a1 1 0 01.707 1.707l-2.5 2.586z"></path></svg>
+                        BAY KHÔNG GIỚI HẠN
+                    </div>
                     <h1 className="mb-4 text-5xl font-black leading-tight text-white sm:text-7xl">
                         Bay muôn nơi,<br />
-                        <em className="font-semibold text-amber-300">đón nắng mới</em>
+                        <em className="font-semibold text-[#f5b82e] not-italic">đón nắng mới</em>
                     </h1>
-                    <p className="max-w-sm text-sm font-medium leading-7 text-white/80">
+                    <p className="max-w-md text-sm font-medium leading-6 text-white/80">
                         Trải nghiệm hành trình tuyệt vời cùng sự mượt mà trong từng lần chạm.
                     </p>
                 </div>
             </section>
 
-            <div className="relative z-20 -mt-8 px-[5vw]">
-                <form onSubmit={handleSearch} className="mx-auto flex w-full max-w-[1120px] flex-wrap items-center gap-2 rounded-2xl border border-slate-200 bg-white p-2 shadow-lg">
-                    <div className="min-w-[150px] flex-1 rounded-xl px-4 py-3 hover:bg-slate-50">
-                        <label className="block text-[10px] font-bold uppercase tracking-[0.15em] text-slate-500">Từ</label>
-                        <input className="w-full bg-transparent text-sm font-semibold outline-none" value={origin} onChange={(e) => setOrigin(e.target.value)} />
+            {/* DESIGN MỚI CHO THANH TÌM KIẾM */}
+            <div className="relative z-20 -mt-12 px-[5vw]">
+                <form onSubmit={handleSearch} className="mx-auto flex w-full max-w-[1200px] items-center justify-between rounded-2xl bg-white p-2 shadow-2xl">
+
+                    {/* Origin */}
+                    <div className="relative flex-1 border-r border-slate-200 px-4 py-2 hover:bg-slate-50 rounded-l-xl transition" ref={originRef}>
+                        <label className="block text-xs font-medium text-slate-500">Từ</label>
+                        <button type="button" className="mt-1 flex w-full items-center justify-between text-left" onClick={() => { setOriginOpen(!originOpen); setDestOpen(false); setPaxOpen(false); setSearchOriginText(''); }}>
+                            <div className="flex-1 truncate pr-2">
+                                <p className="text-xl font-bold text-slate-900">{origin}</p>
+                                <p className="text-xs text-slate-500 truncate">{selectedOrigin ? selectedOrigin.thanhPho : 'Chọn điểm khởi hành'}</p>
+                            </div>
+                            <PlaneTakeoffIcon className="text-slate-400" />
+                        </button>
+                        {originOpen && (
+                            <div className="absolute left-0 top-[calc(100%+15px)] z-50 max-h-[400px] w-full min-w-[320px] overflow-y-auto rounded-2xl border border-slate-200 bg-white p-2 shadow-xl">
+                                <div className="sticky top-0 mb-2 bg-white px-2 py-1">
+                                    <input
+                                        type="text" autoFocus placeholder="Tìm thành phố hoặc sân bay..."
+                                        className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2 text-sm font-semibold outline-none focus:border-amber-400 focus:bg-white"
+                                        value={searchOriginText} onChange={(e) => setSearchOriginText(e.target.value)}
+                                    />
+                                </div>
+                                {filteredOriginAirports.map((airport) => (
+                                    <button key={airport.maSanBay} type="button" className="flex w-full items-center justify-between rounded-xl px-3 py-2 text-left hover:bg-slate-50" onClick={() => { setOrigin(airport.maIATA); setOriginOpen(false); setSearchOriginText(''); }}>
+                                        <div>
+                                            <p className="text-sm font-bold text-slate-900">{airport.thanhPho}</p>
+                                            <p className="text-xs text-slate-500">{airport.tenSanBay}</p>
+                                        </div>
+                                        <span className="text-sm font-black text-slate-700">{airport.maIATA}</span>
+                                    </button>
+                                ))}
+                            </div>
+                        )}
                     </div>
-                    <div className="min-w-[150px] flex-1 rounded-xl px-4 py-3 hover:bg-slate-50">
-                        <label className="block text-[10px] font-bold uppercase tracking-[0.15em] text-slate-500">Đến</label>
-                        <input className="w-full bg-transparent text-sm font-semibold outline-none" value={destination} onChange={(e) => setDestination(e.target.value)} />
+
+                    {/* Destination */}
+                    <div className="relative flex-1 border-r border-slate-200 px-4 py-2 hover:bg-slate-50 transition" ref={destRef}>
+                        <label className="block text-xs font-medium text-slate-500">Đến</label>
+                        <button type="button" className="mt-1 flex w-full items-center justify-between text-left" onClick={() => { setDestOpen(!destOpen); setOriginOpen(false); setPaxOpen(false); setSearchDestText(''); }}>
+                            <div className="flex-1 truncate pr-2">
+                                <p className="text-xl font-bold text-slate-900">{destination}</p>
+                                <p className="text-xs text-slate-500 truncate">{selectedDest ? selectedDest.thanhPho : 'Chọn điểm đến'}</p>
+                            </div>
+                            <PlaneLandingIcon className="text-slate-400" />
+                        </button>
+                        {destOpen && (
+                            <div className="absolute left-0 top-[calc(100%+15px)] z-50 max-h-[400px] w-full min-w-[320px] overflow-y-auto rounded-2xl border border-slate-200 bg-white p-2 shadow-xl">
+                                <div className="sticky top-0 mb-2 bg-white px-2 py-1">
+                                    <input
+                                        type="text" autoFocus placeholder="Tìm thành phố hoặc sân bay..."
+                                        className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2 text-sm font-semibold outline-none focus:border-amber-400 focus:bg-white"
+                                        value={searchDestText} onChange={(e) => setSearchDestText(e.target.value)}
+                                    />
+                                </div>
+                                {filteredDestAirports.map((airport) => (
+                                    <button key={airport.maSanBay} type="button" className="flex w-full items-center justify-between rounded-xl px-3 py-2 text-left hover:bg-slate-50" onClick={() => { setDestination(airport.maIATA); setDestOpen(false); setSearchDestText(''); }}>
+                                        <div>
+                                            <p className="text-sm font-bold text-slate-900">{airport.thanhPho}</p>
+                                            <p className="text-xs text-slate-500">{airport.tenSanBay}</p>
+                                        </div>
+                                        <span className="text-sm font-black text-slate-700">{airport.maIATA}</span>
+                                    </button>
+                                ))}
+                            </div>
+                        )}
                     </div>
-                    <div className="min-w-[140px] flex-1 rounded-xl px-4 py-3 hover:bg-slate-50">
-                        <label className="block text-[10px] font-bold uppercase tracking-[0.15em] text-slate-500">Ngày đi</label>
-                        <input className="w-full bg-transparent text-sm font-semibold outline-none" type="date" value={departureDate} onChange={(e) => setDepartureDate(e.target.value)} />
+
+                    {/* Date */}
+                    <div className="flex-1 border-r border-slate-200 px-4 py-2 hover:bg-slate-50 transition">
+                        <label className="block text-xs font-medium text-slate-500">Ngày đi</label>
+                        <div className="flex items-center justify-between mt-1">
+                            <input className="w-full bg-transparent text-sm font-bold outline-none text-slate-900" type="date" value={departureDate} onChange={(e) => setDepartureDate(e.target.value)} />
+                            <CalendarIcon className="text-slate-400" />
+                        </div>
                     </div>
-                    <div className="relative min-w-[210px] flex-1 rounded-xl px-4 py-3 hover:bg-slate-50" ref={paxRef}>
-                        <label className="block text-[10px] font-bold uppercase tracking-[0.15em] text-slate-500">Hành khách</label>
-                        <button type="button" className="flex w-full items-center justify-between text-left text-sm font-semibold" onClick={() => setPaxOpen((v) => !v)}>
-                            <span>{paxLabel}</span>
-                            <span className="opacity-60">▾</span>
+
+                    {/* Passengers */}
+                    <div className="relative flex-1 px-4 py-2 hover:bg-slate-50 transition" ref={paxRef}>
+                        <label className="block text-xs font-medium text-slate-500">Hành khách</label>
+                        <button type="button" className="mt-1 flex w-full items-center gap-2 text-left" onClick={() => { setPaxOpen((v) => !v); setOriginOpen(false); setDestOpen(false); }}>
+                            <UserIcon className="text-slate-600" />
+                            <span className="text-sm font-bold text-slate-900 truncate">{paxLabel}</span>
                         </button>
                         {paxOpen && (
-                            <div className="absolute right-0 top-[calc(100%+10px)] z-50 w-full max-w-[340px] rounded-2xl border border-slate-200 bg-white p-3 shadow-xl">
-                                <div className="mb-2 flex items-center justify-between border-b border-slate-100 pb-2">
-                                    <span className="text-xs font-black text-slate-700">Yêu cầu trợ giúp đặc biệt</span>
-                                    <button type="button" className="h-7 w-7 rounded-full border border-slate-200" onClick={() => setPaxOpen(false)}>×</button>
-                                </div>
+                            <div className="absolute right-0 top-[calc(100%+15px)] z-50 w-full max-w-[340px] rounded-2xl border border-slate-200 bg-white p-3 shadow-xl">
+                                {/* Nội dung Pop-up hành khách giữ nguyên */}
                                 {[
                                     { key: 'adult', name: 'Người lớn', desc: '12 tuổi trở lên', min: 1 },
                                     { key: 'child', name: 'Trẻ em', desc: '2-11 tuổi', min: 0 },
@@ -216,14 +337,7 @@ const Home = () => {
                                                 <p className="text-xs font-semibold text-slate-400">{row.desc}</p>
                                             </div>
                                             <div className="flex items-center gap-2">
-                                                <button type="button" disabled={!canDec} onClick={() => {
-                                                    setPax((prev) => {
-                                                        const next = { ...prev, [row.key]: prev[row.key] - 1 };
-                                                        if (next.adult < 1) next.adult = 1;
-                                                        if (next.infant > next.adult) next.infant = next.adult;
-                                                        return next;
-                                                    });
-                                                }} className="h-8 w-8 rounded-full border border-slate-200 font-bold disabled:opacity-40">-</button>
+                                                <button type="button" disabled={!canDec} onClick={() => { setPax((prev) => { const next = { ...prev, [row.key]: prev[row.key] - 1 }; if (next.adult < 1) next.adult = 1; if (next.infant > next.adult) next.infant = next.adult; return next; }); }} className="h-8 w-8 rounded-full border border-slate-200 font-bold disabled:opacity-40">-</button>
                                                 <span className="w-6 text-center text-sm font-black text-slate-900">{value}</span>
                                                 <button type="button" disabled={!canInc} onClick={() => setPax((prev) => ({ ...prev, [row.key]: prev[row.key] + 1 }))} className="h-8 w-8 rounded-full border border-slate-200 font-bold disabled:opacity-40">+</button>
                                             </div>
@@ -234,37 +348,40 @@ const Home = () => {
                             </div>
                         )}
                     </div>
-                    <button type="submit" className="m-1 inline-flex h-12 items-center gap-2 rounded-xl bg-amber-300 px-5 text-sm font-black text-slate-900 shadow hover:bg-amber-200" disabled={loading}>
-                        {loading ? 'Đang tải...' : 'Tìm chuyến bay'}
-                    </button>
+
+                    {/* Submit Button */}
+                    <div className="pl-3 pr-2">
+                        <button type="submit" className="flex h-12 items-center gap-2 rounded-xl bg-[#c08d23] px-6 text-sm font-bold text-white hover:bg-[#a97a1d] transition" disabled={loading}>
+                            {loading ? 'Đang tải...' : 'Tìm chuyến bay'}
+                            <PlaneTakeoffIcon />
+                        </button>
+                    </div>
                 </form>
             </div>
 
-            <section className="px-[8vw] pb-24 pt-20">
-                <div className="mb-10 text-center">
-                    <span className="mb-4 inline-block rounded-full border border-blue-200 bg-blue-50 px-4 py-1 text-[11px] font-bold uppercase tracking-[0.15em] text-blue-600">Khám phá</span>
-                    <h2 className="text-4xl font-black text-slate-900 sm:text-5xl">Điểm đến nổi bật<br />tháng này</h2>
-                </div>
-                <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
-                    {destinations.map((dest) => (
-                        <div key={dest.name} className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-lg">
-                            <div className="relative h-48 overflow-hidden">
-                                <img src={dest.img} alt={dest.name} loading="lazy" className="h-full w-full object-cover" />
-                                <span className="absolute left-3 top-3 rounded-full bg-white/90 px-3 py-1 text-[11px] font-semibold">{dest.tag}</span>
-                            </div>
-                            <div className="p-5">
-                                <h3 className="text-2xl font-black text-slate-900">{dest.name}</h3>
-                                <p className="mb-4 mt-1 text-sm font-semibold text-slate-400">Chuyến bay giá rẻ · Bay thẳng</p>
-                                <div className="flex items-center justify-between">
-                                    <div>
-                                        <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400">Chỉ từ</p>
-                                        <p className="text-lg font-black text-slate-900">{dest.price}</p>
-                                    </div>
-                                    <button className="rounded-full bg-blue-50 px-4 py-2 text-sm font-bold text-slate-900 hover:bg-slate-900 hover:text-white">Đặt ngay</button>
+            {/* DESIGN MỚI CHO ĐIỂM ĐẾN NỔI BẬT THÁNG NÀY */}
+            <section className="px-[8vw] pb-24 pt-24 max-w-[1400px] mx-auto">
+                <div className="flex flex-col lg:flex-row gap-10">
+                    {/* Phần tiêu đề nằm bên trái */}
+                    <div className="lg:w-1/4 flex-shrink-0 pt-4">
+                        <span className="mb-4 inline-block rounded-full border border-blue-200 bg-blue-50 px-4 py-1 text-[11px] font-bold uppercase tracking-[0.15em] text-blue-600">Khám phá</span>
+                        <h2 className="text-4xl font-black text-slate-900 sm:text-5xl leading-tight">Điểm đến nổi bật<br />tháng này</h2>
+                    </div>
+
+                    {/* Phần danh sách cards dàn ngang bên phải */}
+                    <div className="flex-1 grid gap-5 sm:grid-cols-2 md:grid-cols-3">
+                        {destinations.map((dest) => (
+                            <div key={dest.name} className="overflow-hidden rounded-2xl bg-white shadow-sm border border-slate-100 transition hover:-translate-y-1 hover:shadow-lg flex flex-col">
+                                <div className="h-40 overflow-hidden shrink-0">
+                                    <img src={dest.img} alt={dest.name} loading="lazy" className="h-full w-full object-cover" />
+                                </div>
+                                <div className="p-4 flex flex-col flex-1 justify-between bg-white">
+                                    <h3 className="text-xl font-bold text-slate-900">{dest.name}</h3>
+                                    <p className="mt-2 text-sm text-slate-500">Giá vé từ <span className="font-bold text-slate-900">{dest.price}</span></p>
                                 </div>
                             </div>
-                        </div>
-                    ))}
+                        ))}
+                    </div>
                 </div>
             </section>
 
@@ -276,7 +393,7 @@ const Home = () => {
                             <button
                                 key={tab}
                                 onClick={() => setActiveServiceTab(tab)}
-                                className={`-mb-px whitespace-nowrap border-b-2 px-5 py-3 text-sm font-bold ${activeServiceTab === tab ? 'border-green-500 text-slate-900' : 'border-transparent text-blue-500'}`}
+                                className={`-mb-px whitespace-nowrap border-b-2 px-5 py-3 text-sm font-bold ${activeServiceTab === tab ? 'border-[#c08d23] text-slate-900' : 'border-transparent text-slate-500'}`}
                             >
                                 {tab}
                             </button>
@@ -287,7 +404,6 @@ const Home = () => {
                             <div key={index} className="flex flex-col rounded-xl border border-slate-200 bg-white p-6">
                                 <h3 className="mb-3 text-lg font-black text-slate-800">{item.title}</h3>
                                 <p className="flex-1 text-sm leading-6 text-slate-500">{item.desc}</p>
-                                {item.action && <a href={item.actionLink || '#'} className="mt-5 inline-block rounded-full bg-sky-500 px-4 py-2 text-xs font-bold text-white">{item.action}</a>}
                             </div>
                         ))}
                     </div>
@@ -316,4 +432,3 @@ const Home = () => {
 };
 
 export default Home;
-

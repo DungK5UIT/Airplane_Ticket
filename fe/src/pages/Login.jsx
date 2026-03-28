@@ -73,8 +73,25 @@ const Login = () => {
                 </div>
             </div>
 
-            <div className="flex-1 flex items-center justify-center p-6 sm:p-10">
-                <div className="w-full max-w-[460px]">
+            <div className="flex-1 flex items-center justify-center p-6 sm:p-10 relative overflow-hidden">
+                {/* Subtle Bubbles for Light Theme */}
+                <div className="absolute inset-0 pointer-events-none">
+                    {[...Array(8)].map((_, i) => (
+                        <div
+                            key={i}
+                            className="bubble !bg-blue-200 !opacity-20"
+                            style={{
+                                left: `${Math.random() * 100}%`,
+                                width: `${Math.random() * 60 + 20}px`,
+                                height: `${Math.random() * 60 + 20}px`,
+                                '--duration': `${Math.random() * 15 + 15}s`,
+                                animationDelay: `${Math.random() * 10}s`
+                            }}
+                        />
+                    ))}
+                </div>
+
+                <div className="w-full max-w-[460px] relative z-10">
                     <div className="lg:hidden flex items-center justify-center gap-3 mb-8">
                         <img
                             src={logoImg}
@@ -87,7 +104,7 @@ const Login = () => {
                         <span className="text-lg font-extrabold tracking-[0.1em] uppercase text-slate-900">FlyViet</span>
                     </div>
 
-                    <div className="rounded-2xl border border-slate-200 bg-white p-8 sm:p-10 shadow-xl">
+                    <div className="rounded-[2.5rem] border border-slate-200 bg-white/70 p-8 sm:p-10 shadow-2xl backdrop-blur-md">
                         <div className="mb-7">
                             <h2 className="text-3xl font-extrabold tracking-tight text-slate-900">Đăng nhập</h2>
                             <p className="mt-2 text-sm font-medium text-slate-500">
@@ -219,3 +236,5 @@ const Login = () => {
 };
 
 export default Login;
+
+

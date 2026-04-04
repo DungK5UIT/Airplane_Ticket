@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { authService } from '../services/api';
 
 // --- Các hàm Helper ---
 const formatVietjetPrice = (value) => {
@@ -120,6 +121,31 @@ const FlightList = ({
         }
     };
 
+    // Lấy tất cả các hạng vé hiện có từ danh sách chuyến bay để làm cột chuẩn
+    const allTicketClasses = useMemo(() => {
+        const classesMap = new Map();
+        list.forEach(f => {
+            if (f.chiTietHangVe) {
+                f.chiTietHangVe.forEach(hv => {
+                    if (!classesMap.has(hv.tenHangVe)) {
+                        classesMap.set(hv.tenHangVe, hv.tenHangVe);
+                    }
+                });
+            }
+        });
+        
+        // Sắp xếp thứ tự: Phổ thông -> Phổ thông đặc biệt -> Thương gia
+        const arr = Array.from(classesMap.values());
+        const order = ['phổ thông', 'phổ thông đặc biệt', 'thương gia'];
+        return arr.sort((a,b) => {
+            const iA = order.findIndex(x => a.toLowerCase().includes(x));
+            const iB = order.findIndex(x => b.toLowerCase().includes(x));
+            const posA = iA !== -1 ? iA : 99;
+            const posB = iB !== -1 ? iB : 99;
+            return posA - posB;
+        });
+    }, [list]);
+
     return (
         <div className="mt-8 bg-white pb-10">
             {/* Header: Điểm đi -> Điểm đến */}
@@ -159,24 +185,33 @@ const FlightList = ({
                 <div className="overflow-x-auto">
                     <div className="min-w-[700px]">
                         {/* Dòng tiêu đề các hạng vé */}
-                        <div className="flex bg-white sticky top-0 z-10 shadow-sm">
-                            <div className="w-[40%] bg-white border-r border-white"></div>
-                            <div className="w-[30%] bg-blue-800 text-white flex items-center justify-center py-4 font-black uppercase tracking-wider text-lg border-r border-white/20">Thương gia</div>
-                            <div className="w-[30%] bg-sky-500 text-white flex items-center justify-center py-4 font-black uppercase tracking-wider text-lg">Phổ thông</div>
-                        </div>
+                        {allTicketClasses.length > 0 && (
+                            <div className="flex bg-white sticky top-0 z-10 shadow-sm">
+                                <div className="w-[40%] bg-white border-r border-white"></div>
+                                {allTicketClasses.map((className, idx) => {
+                                    const colors = ['bg-sky-500', 'bg-emerald-600', 'bg-blue-800', 'bg-amber-600'];
+                                    
+                                    let colorIdx = idx;
+                                    if(className.toLowerCase().includes('thương gia')) colorIdx = 2;
+                                    else if(className.toLowerCase().includes('đặc biệt')) colorIdx = 1;
+                                    else if(className.toLowerCase().includes('phổ thông')) colorIdx = 0;
+
+                                    const bgClass = colors[colorIdx % colors.length];
+                                    return (
+                                        <div key={className} className={`flex-1 ${bgClass} text-white flex items-center justify-center py-4 font-black uppercase tracking-wider text-base lg:text-lg ${idx > 0 ? 'border-l border-white/20' : ''}`}>
+                                            {className.split(' (')[0]}
+                                        </div>
+                                    )
+                                })}
+                            </div>
+                        )}
 
                         {/* Danh sách chuyến bay */}
                         <div className="flex flex-col gap-[2px] bg-gray-200">
                             {list.map((f, index) => {
-                                const ecoPrice = f.giaPhoThong || f.giaCoBan;
-                                const businessPrice = f.giaThuongGia || (f.giaCoBan * 2.5);
-                                const isSoldOutBusiness = f.trangThai?.toLowerCase().includes('hết') || false;
-
-                                // Kiểm tra xem tab nào của chuyến bay này đang được mở
                                 const isExpandedItinerary = expandedMenu.flightId === f.maChuyenBay && expandedMenu.tab === 'itinerary';
-                                const isExpandedBusiness = expandedMenu.flightId === f.maChuyenBay && expandedMenu.tab === 'business';
-                                const isExpandedEco = expandedMenu.flightId === f.maChuyenBay && expandedMenu.tab === 'eco';
-                                const isAnyExpanded = isExpandedItinerary || isExpandedBusiness || isExpandedEco;
+                                const expandedTicket = f.chiTietHangVe?.find(hv => expandedMenu.flightId === f.maChuyenBay && expandedMenu.tab === `ticket_${hv.maHangVe}`);
+                                const isAnyExpanded = isExpandedItinerary || expandedTicket;
 
                                 return (
                                     <div key={f.maChuyenBay} className="flex flex-col bg-white hover:shadow-md transition-shadow relative z-0 hover:z-10">
@@ -207,53 +242,59 @@ const FlightList = ({
                                                 </div>
                                             </div>
 
-                                            {/* CỘT 2: THƯƠNG GIA */}
-                                            <div className="w-[30%] border-l border-gray-200 flex flex-col items-center justify-center hover:bg-blue-50 transition-colors relative pb-6">
-                                                {isSoldOutBusiness ? <SoldOutBox /> : (
-                                                    <>
-                                                        <div className="text-center pt-8 pb-4 w-full h-full flex flex-col items-center justify-center group">
-                                                            <div className="text-3xl font-black text-gray-800">{formatVietjetPrice(businessPrice).main}</div>
-                                                            <div className="text-sm font-bold text-gray-500 italic mt-1 mb-3">{formatVietjetPrice(businessPrice).sub}</div>
-                                                            <button
-                                                                onClick={() => navigate('/flight-detail', { state: { flight: f, totalPassengers, pax, ticketClass: 'BUSINESS' } })}
-                                                                className="px-6 py-2 rounded-full bg-slate-100 text-sm font-bold text-slate-500 hover:bg-blue-800 hover:text-white transition-colors"
-                                                            >
-                                                                Chọn vé
-                                                            </button>
-                                                        </div>
-                                                        {/* Nút mũi tên xổ xuống cho Quyền lợi Thương gia */}
-                                                        <div
-                                                            onClick={() => toggleExpand(f.maChuyenBay, 'business')}
-                                                            className={`absolute bottom-2 cursor-pointer flex items-center justify-center p-1 rounded transition-colors text-xs font-semibold ${isExpandedBusiness ? 'text-blue-800' : 'text-slate-400 hover:text-blue-800'}`}
-                                                        >
-                                                            Chi tiết vé
-                                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className={`w-4 h-4 ml-0.5 transition-transform duration-300 ${isExpandedBusiness ? 'rotate-180' : ''}`}><path fillRule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z" clipRule="evenodd" /></svg>
-                                                        </div>
-                                                    </>
-                                                )}
-                                            </div>
+                                            {/* CÁC CỘT HẠNG VÉ (Dynamic từ chiTietHangVe) */}
+                                            {allTicketClasses.length > 0 && allTicketClasses.map((className, idx) => {
+                                                const hv = f.chiTietHangVe?.find(x => x.tenHangVe === className);
+                                                const isSoldOut = !hv || hv.soLuongChoConLai <= 0;
+                                                const isExpanded = hv && expandedMenu.flightId === f.maChuyenBay && expandedMenu.tab === `ticket_${hv.maHangVe}`;
+                                                
+                                                let colorIdx = idx;
+                                                if(className.toLowerCase().includes('thương gia')) colorIdx = 2;
+                                                else if(className.toLowerCase().includes('đặc biệt')) colorIdx = 1;
+                                                else if(className.toLowerCase().includes('phổ thông')) colorIdx = 0;
 
-                                            {/* CỘT 3: PHỔ THÔNG */}
-                                            <div className="w-[30%] border-l border-gray-200 flex flex-col items-center justify-center hover:bg-sky-50 transition-colors relative pb-6">
-                                                <div className="text-center pt-8 pb-4 w-full h-full flex flex-col items-center justify-center group">
-                                                    <div className="text-3xl font-black text-gray-800">{formatVietjetPrice(ecoPrice).main}</div>
-                                                    <div className="text-sm font-bold text-gray-500 italic mt-1 mb-3">{formatVietjetPrice(ecoPrice).sub}</div>
-                                                    <button
-                                                        onClick={() => navigate('/flight-detail', { state: { flight: f, totalPassengers, pax, ticketClass: 'ECO' } })}
-                                                        className="px-6 py-2 rounded-full bg-slate-100 text-sm font-bold text-slate-500 hover:bg-sky-500 hover:text-white transition-colors"
-                                                    >
-                                                        Chọn vé
-                                                    </button>
-                                                </div>
-                                                {/* Nút mũi tên xổ xuống cho Quyền lợi Phổ thông */}
-                                                <div
-                                                    onClick={() => toggleExpand(f.maChuyenBay, 'eco')}
-                                                    className={`absolute bottom-2 cursor-pointer flex items-center justify-center p-1 rounded transition-colors text-xs font-semibold ${isExpandedEco ? 'text-sky-600' : 'text-slate-400 hover:text-sky-600'}`}
-                                                >
-                                                    Chi tiết vé
-                                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className={`w-4 h-4 ml-0.5 transition-transform duration-300 ${isExpandedEco ? 'rotate-180' : ''}`}><path fillRule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z" clipRule="evenodd" /></svg>
-                                                </div>
-                                            </div>
+                                                const colorsHover = ['hover:bg-sky-50', 'hover:bg-emerald-50', 'hover:bg-blue-50', 'hover:bg-amber-50'];
+                                                const hoverClass = colorsHover[colorIdx % colorsHover.length];
+
+                                                const textColors = ['text-sky-600', 'text-emerald-600', 'text-blue-800', 'text-amber-600'];
+                                                const textColor = textColors[colorIdx % 4];
+                                                
+                                                const btnColors = ['hover:bg-sky-500', 'hover:bg-emerald-600', 'hover:bg-blue-800', 'hover:bg-amber-600'];
+                                                const btnColor = btnColors[colorIdx % 4];
+
+                                                return (
+                                                    <div key={className} className={`flex-1 border-l border-gray-200 flex flex-col items-center justify-center ${!isSoldOut ? hoverClass : ''} transition-colors relative pb-6`}>
+                                                        {isSoldOut ? <SoldOutBox /> : (
+                                                            <>
+                                                                <div className="text-center pt-8 pb-4 w-full h-full flex flex-col items-center justify-center group">
+                                                                    <div className="text-2xl lg:text-3xl font-black text-gray-800">{formatVietjetPrice(hv.gia).main}</div>
+                                                                    <div className="text-xs lg:text-sm font-bold text-gray-500 italic mt-1 mb-3">{formatVietjetPrice(hv.gia).sub}</div>
+                                                                    <button
+                                                                        onClick={() => {
+                                                                            if (!authService.getCurrentUser()) {
+                                                                                navigate('/login', { state: { from: '/flight' } });
+                                                                            } else {
+                                                                                navigate('/flight-detail', { state: { flight: f, totalPassengers, pax, ticketClassDetail: hv } });
+                                                                            }
+                                                                        }}
+                                                                        className={`px-4 lg:px-6 py-2 rounded-full bg-slate-100 text-xs lg:text-sm font-bold text-slate-500 ${btnColor} hover:text-white transition-colors`}
+                                                                    >
+                                                                        Chọn vé
+                                                                    </button>
+                                                                </div>
+                                                                {/* Nút mũi tên */}
+                                                                <div
+                                                                    onClick={() => toggleExpand(f.maChuyenBay, `ticket_${hv.maHangVe}`)}
+                                                                    className={`absolute bottom-2 cursor-pointer flex items-center justify-center p-1 rounded transition-colors text-[10px] lg:text-xs font-semibold ${isExpanded ? textColor : 'text-slate-400 hover:' + textColor}`}
+                                                                >
+                                                                    Chi tiết vé
+                                                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className={`w-3 h-3 lg:w-4 lg:h-4 ml-0.5 transition-transform duration-300 ${isExpanded ? 'rotate-180' : ''}`}><path fillRule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z" clipRule="evenodd" /></svg>
+                                                                </div>
+                                                            </>
+                                                        )}
+                                                    </div>
+                                                );
+                                            })}
                                         </div>
 
                                         {/* HÀNG MỞ RỘNG (Render dựa theo tab nào đang được bấm) */}
@@ -311,29 +352,13 @@ const FlightList = ({
                                                     </div>
                                                 )}
 
-                                                {/* 2. NẾU MỞ TAB QUYỀN LỢI THƯƠNG GIA */}
-                                                {isExpandedBusiness && (
-                                                    <div className="p-8 w-full flex justify-center bg-blue-50/50">
-                                                        <div className="w-2/3 bg-white p-6 rounded-xl shadow-sm border border-blue-100">
-                                                            <h4 className="font-bold text-lg mb-4 text-blue-900 border-b border-blue-50 pb-2">Quyền lợi vé Thương gia</h4>
-                                                            <ul className="grid grid-cols-1 md:grid-cols-2 gap-y-4 gap-x-8">
-                                                                {classFeatures.BUSINESS.map((feature, i) => (
-                                                                    <li key={i} className="flex items-start gap-2 text-sm text-slate-700">
-                                                                        <CheckIcon /> <span>{feature}</span>
-                                                                    </li>
-                                                                ))}
-                                                            </ul>
-                                                        </div>
-                                                    </div>
-                                                )}
-
-                                                {/* 3. NẾU MỞ TAB QUYỀN LỢI PHỔ THÔNG */}
-                                                {isExpandedEco && (
-                                                    <div className="p-8 w-full flex justify-center bg-sky-50/50">
+                                                {/* 2. NẾU MỞ TAB CHI TIẾT HẠNG VÉ */}
+                                                {expandedTicket && (
+                                                    <div className="p-8 w-full flex justify-center bg-sky-50/30">
                                                         <div className="w-2/3 bg-white p-6 rounded-xl shadow-sm border border-sky-100">
-                                                            <h4 className="font-bold text-lg mb-4 text-sky-700 border-b border-sky-50 pb-2">Quyền lợi vé Phổ thông</h4>
+                                                            <h4 className="font-bold text-lg mb-4 text-sky-800 border-b border-sky-50 pb-2">Quyền lợi vé {expandedTicket.tenHangVe}</h4>
                                                             <ul className="grid grid-cols-1 md:grid-cols-2 gap-y-4 gap-x-8">
-                                                                {classFeatures.ECO.map((feature, i) => (
+                                                                {(expandedTicket.tenHangVe.toLowerCase().includes('thương gia') ? classFeatures.BUSINESS : classFeatures.ECO).map((feature, i) => (
                                                                     <li key={i} className="flex items-start gap-2 text-sm text-slate-700">
                                                                         <CheckIcon /> <span>{feature}</span>
                                                                     </li>

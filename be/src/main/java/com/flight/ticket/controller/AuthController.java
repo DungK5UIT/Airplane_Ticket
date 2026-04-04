@@ -25,7 +25,7 @@ public class AuthController {
             AuthResponse response = authService.register(registerRequest);
             return ResponseEntity.ok(response);
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(new AuthResponse(null, e.getMessage()));
+            return ResponseEntity.badRequest().body(AuthResponse.builder().message(e.getMessage()).build());
         }
     }
 
@@ -35,7 +35,7 @@ public class AuthController {
             AuthResponse response = authService.login(loginRequest);
             return ResponseEntity.ok(response);
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(new AuthResponse(null, e.getMessage()));
+            return ResponseEntity.badRequest().body(AuthResponse.builder().message(e.getMessage()).build());
         }
     }
 
@@ -45,7 +45,7 @@ public class AuthController {
             AuthResponse response = authService.verifyEmail(code);
             return ResponseEntity.ok(response);
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(new AuthResponse(null, e.getMessage()));
+            return ResponseEntity.badRequest().body(AuthResponse.builder().message(e.getMessage()).build());
         }
     }
 
@@ -55,7 +55,7 @@ public class AuthController {
             AuthResponse response = authService.forgotPassword(request.get("email"));
             return ResponseEntity.ok(response);
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(new AuthResponse(null, e.getMessage()));
+            return ResponseEntity.badRequest().body(AuthResponse.builder().message(e.getMessage()).build());
         }
     }
 }

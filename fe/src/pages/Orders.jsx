@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
+import BookingSummary from '../components/BookingSummary';
+import { authService } from '../services/api';
 
 const formatMoneyVND = (value) => {
     if (value == null || Number.isNaN(Number(value))) return '—';
@@ -15,6 +17,41 @@ const formatDateTime = (value) => {
     return d.toLocaleString('vi-VN', { dateStyle: 'medium', timeStyle: 'short' });
 };
 
+const formatTimeOnly = (value) => {
+    if (!value) return '--:--';
+    let d;
+    if (Array.isArray(value)) {
+        d = new Date(value[0], value[1] - 1, value[2], value[3] || 0, value[4] || 0);
+    } else if (typeof value === 'string' && value.includes('T')) {
+        const [datePart, timePart] = value.split('T');
+        const [y, m, day] = datePart.split('-').map(Number);
+        const [h, min] = timePart.split(':').map(Number);
+        d = new Date(y, m - 1, day, h, min);
+    } else {
+        d = new Date(value);
+    }
+    if (Number.isNaN(d.getTime())) return '--:--';
+    return d.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', hour12: false });
+};
+
+const formatDateShort = (value) => {
+    if (!value) return '--/--/----';
+    let d;
+    if (Array.isArray(value)) {
+        d = new Date(value[0], value[1] - 1, value[2]);
+    } else if (typeof value === 'string' && value.includes('T')) {
+        const [dPart] = value.split('T');
+        const [y, m, day] = dPart.split('-').map(Number);
+        d = new Date(y, m - 1, day);
+    } else {
+        d = new Date(value);
+    }
+    if (Number.isNaN(d.getTime())) return '--/--/----';
+    const days = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
+    const dayName = days[d.getDay()];
+    return `${dayName}, ${d.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' })}`;
+};
+
 export default function Orders() {
     const { state } = useLocation();
     const navigate = useNavigate();
@@ -23,6 +60,20 @@ export default function Orders() {
     const pax = state?.pax || { adult: 1, child: 0, infant: 0 };
     const selectedSeats = state?.selectedSeats || [];
     const totalPrice = state?.totalPrice || 0;
+
+    const selectedBaggage = state?.selectedBaggage;
+    const selectedInsurance = state?.selectedInsurance;
+    const ticketClass = state?.ticketClass;
+    const ticketClassDetail = state?.ticketClassDetail;
+    
+    const totalPassengers = pax.adult + pax.child + pax.infant;
+
+    // Recalculate breakdown for display
+    const baggageTotal = (selectedBaggage?.price || 0) * totalPassengers;
+    const insuranceTotal = (selectedInsurance?.price || 0) * totalPassengers;
+    const fareAndTaxes = totalPrice - baggageTotal - insuranceTotal;
+    const totalTicketPrice = fareAndTaxes / 1.2;
+    const taxesAndFees = fareAndTaxes - totalTicketPrice;
 
     const [contact, setContact] = useState({ name: '', email: '', phone: '' });
 
@@ -36,7 +87,9 @@ export default function Orders() {
                     label: `${labelPrefix} ${i}`,
                     title: type === 'adult' ? 'Ông' : 'Bé trai',
                     fullName: '',
-                    dob: ''
+                    dob: '',
+                    cccd: '',
+                    gioiTinh: type === 'adult' ? 'Nam' : 'Nam'
                 });
             }
         };
@@ -48,14 +101,21 @@ export default function Orders() {
 
     if (!flight) {
         return (
-            <div className="min-h-screen bg-slate-100 p-10 text-center">
-                <h3 className="mb-4 text-xl font-bold text-slate-800">Không tìm thấy dữ liệu chuyến bay.</h3>
-                <button
-                    onClick={() => navigate('/flight')}
-                    className="rounded-xl bg-blue-700 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-800"
-                >
-                    Quay lại
-                </button>
+            <div className="min-h-screen bg-[#f8f9fa] p-10 text-center font-sans flex flex-col items-center justify-center">
+                <style>
+                    {`
+                        @import url('https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,700&display=swap');
+                    `}
+                </style>
+                <div style={{ fontFamily: "'Nunito', sans-serif" }}>
+                    <h3 className="mb-4 text-xl font-bold text-slate-800">Không tìm thấy dữ liệu chuyến bay.</h3>
+                    <button
+                        onClick={() => navigate('/flight')}
+                        className="rounded-xl bg-sky-600 px-4 py-2 text-sm font-semibold text-white hover:bg-sky-700"
+                    >
+                        Quay lại
+                    </button>
+                </div>
             </div>
         );
     }
@@ -70,7 +130,7 @@ export default function Orders() {
         setContact(prev => ({ ...prev, [field]: value }));
     };
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
         // Basic validation
         if (!contact.name || !contact.email || !contact.phone) {
@@ -78,26 +138,73 @@ export default function Orders() {
             return;
         }
         for (let p of passengers) {
-            if (!p.fullName || !p.dob) {
+            if (!p.fullName || !p.dob || (p.type === 'adult' && !p.cccd)) {
                 alert(`Vui lòng nhập đầy đủ thông tin cho ${p.label}!`);
                 return;
             }
         }
 
-        alert('Đặt vé thành công! Bạn có thể chuyển sang gateway thanh toán từ đây.');
-        // navigate('/payment', { state: { flight, pax, selectedSeats, totalPrice, contact, passengers } });
+        try {
+            const userSession = authService.getCurrentUser();
+            // Robust check for user ID at various levels
+            const maNguoiDung = userSession?.maNguoiDung || userSession?.user?.maNguoiDung || userSession?.user?.id || userSession?.id || null;
+
+            // Map to backend BookingRequestDto
+            const requestData = {
+                maNguoiDung: maNguoiDung,
+                maKhuyenMai: null, // Update this if promo code logic is added
+                tongTien: totalPrice,
+                passengers: passengers.map((p, i) => ({
+                    maChuyenBay: flight.maChuyenBay || flight.id,
+                    maHangVe: ticketClassDetail?.maHangVe || (ticketClass === 'BUSINESS' ? 2 : 1),
+                    hoTenHK: p.fullName,
+                    cccd: p.cccd || null,
+                    ngaySinh: p.dob, // Format: YYYY-MM-DD
+                    gioiTinh: p.gioiTinh === 'Nam' ? 'Nam' : 'Nữ',
+                    doiTuong: p.type === 'adult' ? 'NGUOI_LON' : (p.type === 'child' ? 'TRE_EM' : 'EM_BE'),
+                    soGhe: selectedSeats[i],
+                    giaVe: (totalPrice - ((selectedBaggage?.price || 0) + (selectedInsurance?.price || 0)) * passengers.length) / passengers.length, 
+                    giaHanhLy: selectedBaggage?.price || 0,
+                    canNangHanhLy: selectedBaggage?.kg || 0
+                }))
+            };
+
+            // Forward data to payment page
+            navigate('/payment', {
+                state: {
+                    requestData,
+                    flight,
+                    pax,
+                    selectedSeats,
+                    totalPrice,
+                    selectedBaggage,
+                    selectedInsurance,
+                    ticketClass,
+                    ticketClassDetail
+                }
+            });
+        } catch (error) {
+            console.error('Lỗi khi đặt vé:', error);
+            alert('Lỗi khi chuẩn bị dữ liệu gửi tới trang thanh toán');
+        }
     };
 
     return (
-        <div className="min-h-screen bg-slate-100 font-sans">
+        <div className="min-h-screen bg-[#f8f9fa] flex flex-col text-slate-900 font-sans" style={{ fontFamily: "'Nunito', sans-serif" }}>
+            <style>
+                {`
+                    @import url('https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,700&display=swap');
+                `}
+            </style>
             <Navbar transparent={false} />
-            <div className="mx-auto grid w-[min(1200px,95vw)] gap-6 pb-14 pt-[100px] lg:grid-cols-[1fr_360px]">
-                <div>
-                    <form onSubmit={handleSubmit}>
+            <div className="mx-auto w-[min(1200px,96vw)] pt-[100px] mb-10 flex-grow grid lg:grid-cols-[1fr_360px] gap-6 items-start">
+                <div className="flex flex-col gap-5">
+                    <form id="order-form" onSubmit={handleSubmit} className="flex flex-col gap-6">
                         {/* Thông tin liên hệ */}
-                        <div className="mb-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-                            <h2 className="mb-5 flex items-center gap-3 text-xl font-black text-slate-900">
-                                <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-blue-50 text-sm text-blue-600">1</span> Thông tin liên lạc
+                        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+                            <h2 className="mb-5 flex items-center gap-3 text-lg font-bold text-slate-800">
+                                <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-sky-100 text-sm font-black text-sky-600">1</span> 
+                                Thông tin liên lạc
                             </h2>
                             <div className="grid gap-4 md:grid-cols-2">
                                 <div className="md:col-span-2">
@@ -137,53 +244,49 @@ export default function Orders() {
                         </div>
 
                         {/* Thông tin hành khách */}
-                        <div className="mb-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-                            <h2 className="mb-5 flex items-center gap-3 text-xl font-black text-slate-900">
-                                <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-blue-50 text-sm text-blue-600">2</span> Thông tin hành khách
+                        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+                            <h2 className="mb-5 flex items-center gap-3 text-lg font-bold text-slate-800">
+                                <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-sky-100 text-sm font-black text-sky-600">2</span> 
+                                Thông tin hành khách
                             </h2>
-                            <p className="mb-5 text-sm text-slate-500">
+                            <p className="mb-5 text-sm font-medium text-slate-500">
                                 Vui lòng điền tên in hoa không dấu và kiểm tra kỹ ngày sinh.
                             </p>
 
                             {passengers.map((p, idx) => (
-                                <div key={idx} className="mb-4 rounded-2xl border border-slate-200 bg-slate-50 p-5 last:mb-0">
-                                    <div className="mb-4 flex items-center gap-2 text-base font-extrabold text-slate-900">
-                                        <svg className="text-slate-500" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                                            <path strokeLinecap="round" strokeLinejoin="round" d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2" />
-                                            <circle cx="9" cy="7" r="4" strokeLinecap="round" strokeLinejoin="round" />
-                                        </svg>
-                                        {p.label}
+                                <div key={idx} className="mb-5 rounded-xl border border-slate-100 bg-slate-50 p-5 last:mb-0 shadow-sm">
+                                    <div className="mb-4 flex items-center justify-between text-base font-bold text-slate-800">
+                                        <div className="flex items-center gap-2">
+                                            <div className="w-8 h-8 rounded-full bg-sky-100 flex items-center justify-center text-sky-600">
+                                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4"><path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" /></svg>
+                                            </div>
+                                            {p.label}
+                                        </div>
+                                        {selectedSeats[idx] && (
+                                            <span className="px-3 py-1 bg-amber-100 text-amber-700 font-black rounded-lg text-sm border border-amber-200">
+                                                Ghế: {selectedSeats[idx]}
+                                            </span>
+                                        )}
                                     </div>
 
-                                    <div className="grid gap-4 md:grid-cols-2">
+                                    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
                                         <div>
-                                            <label className="mb-1.5 block text-sm font-bold text-slate-600">Danh xưng</label>
+                                            <label className="mb-1.5 block text-sm font-bold text-slate-600">Giới tính</label>
                                             <select
-                                                className="h-11 w-full rounded-xl border border-slate-200 px-3 text-sm font-medium outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
-                                                value={p.title}
-                                                onChange={e => handlePaxChange(idx, 'title', e.target.value)}
+                                                className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-medium outline-none focus:border-sky-500 focus:ring-4 focus:ring-sky-50 transition-all"
+                                                value={p.gioiTinh}
+                                                onChange={e => handlePaxChange(idx, 'gioiTinh', e.target.value)}
                                             >
-                                                {p.type === 'adult' ? (
-                                                    <>
-                                                        <option value="Ông">Ông</option>
-                                                        <option value="Bà">Bà</option>
-                                                        <option value="Anh">Anh</option>
-                                                        <option value="Chị">Chị</option>
-                                                    </>
-                                                ) : (
-                                                    <>
-                                                        <option value="Bé trai">Bé trai</option>
-                                                        <option value="Bé gái">Bé gái</option>
-                                                    </>
-                                                )}
+                                                <option value="Nam">Nam</option>
+                                                <option value="Nữ">Nữ</option>
                                             </select>
                                         </div>
 
-                                        <div>
+                                        <div className="lg:col-span-2">
                                             <label className="mb-1.5 block text-sm font-bold text-slate-600">Họ và tên (In hoa không dấu)</label>
                                             <input
                                                 type="text"
-                                                className="h-11 w-full rounded-xl border border-slate-200 px-3 text-sm font-medium outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
+                                                className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-medium outline-none focus:border-sky-500 focus:ring-4 focus:ring-sky-50 transition-all uppercase"
                                                 placeholder="VD: NGUYEN VAN A"
                                                 value={p.fullName}
                                                 onChange={e => handlePaxChange(idx, 'fullName', e.target.value.toUpperCase())}
@@ -195,19 +298,34 @@ export default function Orders() {
                                             <label className="mb-1.5 block text-sm font-bold text-slate-600">Ngày sinh</label>
                                             <input
                                                 type="date"
-                                                className="h-11 w-full rounded-xl border border-slate-200 px-3 text-sm font-medium outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
+                                                className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-medium outline-none focus:border-sky-500 focus:ring-4 focus:ring-sky-50 transition-all"
                                                 value={p.dob}
+                                                max={new Date().toISOString().split("T")[0]}
                                                 onChange={e => handlePaxChange(idx, 'dob', e.target.value)}
                                                 required
                                             />
                                         </div>
+
+                                        {p.type === 'adult' && (
+                                            <div className="lg:col-span-2">
+                                                <label className="mb-1.5 block text-sm font-bold text-slate-600">CCCD / Hộ chiếu</label>
+                                                <input
+                                                    type="text"
+                                                    className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-medium outline-none focus:border-sky-500 focus:ring-4 focus:ring-sky-50 transition-all"
+                                                    placeholder="Số CCCD hoặc Hộ chiếu"
+                                                    value={p.cccd}
+                                                    onChange={e => handlePaxChange(idx, 'cccd', e.target.value)}
+                                                    required
+                                                />
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
                             ))}
                         </div>
 
                         {/* Submit button */}
-                        <button type="submit" className="mt-3 flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 to-sky-500 text-sm font-extrabold text-white transition hover:brightness-105">
+                        <button type="submit" className="mt-2 flex h-14 w-full items-center justify-center gap-2 rounded-xl bg-sky-600 text-base font-bold text-white transition-all hover:bg-sky-700 shadow-sm disabled:opacity-50">
                             Tiến hành thanh toán
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
@@ -217,55 +335,25 @@ export default function Orders() {
                 </div>
 
                 {/* Right Panel */}
-                <div className="h-fit rounded-2xl border border-slate-200 bg-white p-6 shadow-sm lg:sticky lg:top-[100px]">
-                    <h2 className="mb-4 text-lg font-black text-slate-900">Tóm tắt chuyến bay</h2>
-
-                    <div className="mb-4 border-b border-dashed border-slate-200 pb-4">
-                        <div className="mb-3 flex items-center justify-between">
-                            <div className="text-lg font-black">{flight.origin}</div>
-                            <svg width="20" height="20" className="text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3" />
-                            </svg>
-                            <div className="text-lg font-black">{flight.destination}</div>
-                        </div>
-                        <div className="text-sm font-semibold text-slate-500">
-                            {flight.airline} • {flight.flightNumber}
-                        </div>
-                        <div className="mt-1 text-sm font-semibold text-slate-500">
-                            Khởi hành: {formatDateTime(flight.departureTime)}
-                        </div>
-                    </div>
-
-                    <div className="mb-4 border-b border-dashed border-slate-200 pb-4 text-sm">
-                        <div className="mb-2 flex justify-between text-slate-600">
-                            <span>Người lớn</span>
-                            <span className="font-extrabold text-slate-900">{pax.adult}</span>
-                        </div>
-                        {pax.child > 0 && (
-                            <div className="mb-2 flex justify-between text-slate-600">
-                                <span>Trẻ em</span>
-                                <span className="font-extrabold text-slate-900">{pax.child}</span>
-                            </div>
-                        )}
-                        {pax.infant > 0 && (
-                            <div className="mb-2 flex justify-between text-slate-600">
-                                <span>Em bé</span>
-                                <span className="font-extrabold text-slate-900">{pax.infant}</span>
-                            </div>
-                        )}
-                        <div className="mt-3 flex justify-between text-slate-600">
-                            <span>Ghế chọn</span>
-                            <span className="font-extrabold text-blue-600">{selectedSeats.join(', ')}</span>
-                        </div>
-                    </div>
-
-                    <div className="flex items-center justify-between">
-                        <span className="text-base font-extrabold">Tổng tiền</span>
-                        <span className="text-2xl font-black text-red-500">
-                            {formatMoneyVND(totalPrice)}
-                        </span>
-                    </div>
-                </div>
+                <BookingSummary 
+                    flight={flight}
+                    pax={pax}
+                    selectedSeats={selectedSeats}
+                    totalPrice={totalPrice}
+                    selectedBaggage={selectedBaggage}
+                    selectedInsurance={selectedInsurance}
+                    ticketClass={ticketClass}
+                    ticketClassDetail={ticketClassDetail}
+                    actionButton={
+                        <button
+                            type="submit"
+                            form="order-form"
+                            className="w-full py-3 rounded-xl bg-sky-600 text-white font-bold hover:bg-sky-700 transition-colors shadow-sm"
+                        >
+                            Thanh toán ngay
+                        </button>
+                    }
+                />
             </div>
             <Footer />
         </div>

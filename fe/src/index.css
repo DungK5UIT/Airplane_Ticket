@@ -19,16 +19,7 @@ body {
   padding: 0;
   min-height: 100vh;
   width: 100%;
-
-  /* --- THÊM PHẦN ẢNH NỀN VÀO ĐÂY --- */
   background-color: #f0f2f5;
-  /* Giữ lại làm màu dự phòng khi ảnh chưa load kịp */
-  background-image: url('https://images.unsplash.com/photo-1528127269322-539801943592?q=80&w=2070&auto=format&fit=crop');
-  background-size: cover;
-  background-position: center;
-  background-attachment: fixed;
-  /* Giữ ảnh đứng im khi cuộn trang */
-  background-repeat: no-repeat;
 }
 
 * {

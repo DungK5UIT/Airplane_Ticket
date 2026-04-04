@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
+import BookingSummary from '../components/BookingSummary';
+import PartnerBanks from '../components/PartnerBanks';
 
 // --- Helpers ---
 const formatMoneyVND = (value) => {
@@ -45,7 +47,6 @@ const formatDateShort = (value) => {
 };
 
 const SEAT_COLS = ['A', 'B', 'C', 'D', 'E', 'F'];
-const TOTAL_ROWS = 20;
 
 // --- Dữ liệu gói hành lý ---
 const BAGGAGE_OPTIONS = [
@@ -133,13 +134,15 @@ export default function FlightDetail() {
     const navigate = useNavigate();
 
     const flight = state?.flight;
-    const ticketClass = state?.ticketClass || 'ECO';
+    const ticketClassDetail = state?.ticketClassDetail;
+    const ticketClass = state?.ticketClass || (ticketClassDetail?.tenHangVe) || 'ECO';
     const initialTotal = state?.totalPassengers || 1;
     const [pax, setPax] = useState(state?.pax || { adult: initialTotal, child: 0, infant: 0 });
     const totalPassengers = pax.adult + pax.child + pax.infant;
 
     const [selectedSeats, setSelectedSeats] = useState([]);
     const [occupiedSeats, setOccupiedSeats] = useState([]);
+    const [seatCompartments, setSeatCompartments] = useState([]);
     const [expandedSection, setExpandedSection] = useState(null);
 
     // Hành lý & bảo hiểm state
@@ -149,21 +152,55 @@ export default function FlightDetail() {
     useEffect(() => {
         window.scrollTo(0, 0); // Đảm bảo trang bắt đầu ở trên cùng
         if (!flight) { navigate('/flight'); return; }
-        const hash = flight.id ? flight.id.split('').reduce((a, b) => a + b.charCodeAt(0), 0) : 123;
+        const hash = flight.id ? flight.id.split('').reduce((a, b) => a + b.charCodeAt(0), 0) : flight.maChuyenBay || 123;
         const seedRandom = (seed) => {
             let t = seed += 0x6D2B79F5;
             t = Math.imul(t ^ t >>> 15, t | 1);
             t ^= t + Math.imul(t ^ t >>> 7, t | 61);
             return ((t ^ t >>> 14) >>> 0) / 4294967296;
         };
-        const occupied = [];
-        let seed = hash;
-        for (let r = 1; r <= TOTAL_ROWS; r++) {
-            for (let c of SEAT_COLS) {
-                if (seedRandom(seed++) < 0.3) occupied.push(`${r}${c}`);
-            }
+        
+        const totalSeats = flight.soLuongCho || 120;
+        const totalRows = Math.ceil(totalSeats / 6);
+        
+        let compartments = [];
+        if (flight.chiTietHangVe && flight.chiTietHangVe.length > 0) {
+            compartments = [...flight.chiTietHangVe].sort((a,b) => {
+                const getRank = t => t.toLowerCase().includes('thương gia') ? 1 : (t.toLowerCase().includes('đặc biệt') ? 2 : 3);
+                return getRank(a.tenHangVe) - getRank(b.tenHangVe);
+            });
+        } else {
+            compartments = [{ tenHangVe: 'Phổ thông', soLuongCho: totalSeats, soLuongChoConLai: totalSeats - Math.floor(totalSeats * 0.3) }];
         }
-        setOccupiedSeats(occupied);
+
+        let currentIndex = 0;
+        const compData = compartments.map(c => {
+           const start = currentIndex;
+           currentIndex += (c.soLuongCho || 0);
+           const end = currentIndex;
+           const occupiedCount = (c.soLuongCho || 0) - (c.soLuongChoConLai || 0);
+           return { ...c, start, end, occupiedCount };
+        });
+        setSeatCompartments(compData);
+
+        let newOccupied = [];
+        compData.forEach(comp => {
+            const compSeats = [];
+            for (let i = comp.start; i < comp.end; i++) {
+                const r = Math.floor(i / 6) + 1;
+                const c = SEAT_COLS[i % 6];
+                compSeats.push(`${r}${c}`);
+            }
+            let seed = hash + comp.start;
+            const shuffled = [...compSeats];
+            for (let i = shuffled.length - 1; i > 0; i--) {
+                const j = Math.floor(seedRandom(seed++) * (i + 1));
+                [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+            }
+            newOccupied = [...newOccupied, ...shuffled.slice(0, Math.max(0, comp.occupiedCount))];
+        });
+
+        setOccupiedSeats(newOccupied);
     }, [flight, navigate]);
 
     if (!flight) return null;
@@ -174,11 +211,6 @@ export default function FlightDetail() {
             const isRemoving = prev.includes(seatId);
             const nextSeats = isRemoving ? prev.filter(s => s !== seatId) : [...prev, seatId];
 
-            // Nếu đã chọn đủ (hoặc vượt quá) số ghế so với hành khách ban đầu, thì tự động đóng accordion
-            if (!isRemoving && nextSeats.length >= totalPassengers) {
-                setTimeout(() => setExpandedSection(null), 300);
-            }
-
             if (!isRemoving && prev.length >= totalPassengers) {
                 setPax(p => ({ ...p, adult: p.adult + 1 }));
             }
@@ -186,7 +218,7 @@ export default function FlightDetail() {
         });
     };
 
-    const basePrice = ticketClass === 'BUSINESS' ? (flight.giaThuongGia || flight.giaCoBan * 2.5) : (flight.giaPhoThong || flight.giaCoBan || 0);
+    const basePrice = ticketClassDetail ? ticketClassDetail.gia : (ticketClass === 'BUSINESS' ? (flight.giaThuongGia || flight.giaCoBan * 2.5) : (flight.giaPhoThong || flight.giaCoBan || 0));
     const totalTicketPrice = basePrice * totalPassengers;
     const taxesAndFees = totalTicketPrice * 0.2;
 
@@ -239,27 +271,58 @@ export default function FlightDetail() {
                             {expandedSection === 'seat' && (
                                 <div className="p-6 border-t border-slate-100 bg-slate-50/50">
                                     <div className="mb-6 flex flex-wrap justify-center gap-4 text-xs font-bold text-slate-600 bg-white p-3 rounded-xl shadow-sm w-max mx-auto border border-slate-200">
-                                        <span className="inline-flex items-center gap-2"><span className="h-4 w-4 rounded border-2 border-slate-300 bg-white" /> Trống</span>
-                                        <span className="inline-flex items-center gap-2"><span className="h-4 w-4 rounded border-2 border-sky-600 bg-sky-500" /> Đang chọn</span>
-                                        <span className="inline-flex items-center gap-2"><span className="h-4 w-4 rounded border-2 border-slate-200 bg-slate-200" /> Đã đặt</span>
+                                        <span className="inline-flex items-center gap-2"><span className="h-4 w-4 rounded border-[1px] border-sky-700 bg-sky-600" /> Phổ thông</span>
+                                        <span className="inline-flex items-center gap-2"><span className="h-4 w-4 rounded border-[1px] border-emerald-700 bg-emerald-600" /> Đặc biệt</span>
+                                        <span className="inline-flex items-center gap-2"><span className="h-4 w-4 rounded border-[1px] border-blue-900 bg-blue-800" /> Thương gia</span>
+                                        <span className="inline-flex items-center gap-2"><span className="h-4 w-4 rounded border-[1px] border-amber-600 bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.5)]" /> Đang chọn</span>
+                                        <span className="inline-flex items-center gap-2 text-slate-400"><span className="h-4 w-4 rounded border-2 border-slate-200 bg-slate-200 flex items-center justify-center text-[10px] font-black">×</span> Đã đặt / Khóa</span>
                                     </div>
                                     <div className="mx-auto w-max rounded-[40px] border-[10px] border-slate-300 bg-white px-8 py-10 shadow-inner">
-                                        {Array.from({ length: TOTAL_ROWS }).map((_, rIdx) => {
+                                        {Array.from({ length: Math.ceil((flight.soLuongCho || 120) / 6) }).map((_, rIdx) => {
                                             const rowNum = rIdx + 1;
+                                            const totalSeats = flight.soLuongCho || 120;
                                             const leftSeats = SEAT_COLS.slice(0, 3);
                                             const rightSeats = SEAT_COLS.slice(3, 6);
+                                            
                                             const renderSeat = (c) => {
+                                                const seatIndex = rIdx * 6 + SEAT_COLS.indexOf(c);
+                                                if (seatIndex >= totalSeats) return <div key={`empty-${rowNum}-${c}`} className="w-10 h-10" />;
+                                                
                                                 const seatId = `${rowNum}${c}`;
                                                 const isOccupied = occupiedSeats.includes(seatId);
                                                 const isSelected = selectedSeats.includes(seatId);
-                                                const base = 'h-10 w-10 rounded-lg border-2 text-sm font-black transition-all';
-                                                const cls = isOccupied
-                                                    ? 'border-slate-200 bg-slate-200 text-slate-400 cursor-not-allowed'
-                                                    : isSelected
-                                                        ? 'border-sky-700 bg-sky-500 text-white shadow-md scale-110'
-                                                        : 'border-slate-300 bg-white text-slate-600 hover:border-sky-500 hover:bg-sky-50';
+                                                
+                                                const comp = seatCompartments.find(comp => seatIndex >= comp.start && seatIndex < comp.end);
+                                                const isMyClass = ticketClassDetail && comp ? (comp.maHangVe === ticketClassDetail.maHangVe) : true;
+
+                                                let baseClass = 'border-slate-300 bg-white text-slate-600';
+                                                if (comp) {
+                                                    if (comp.tenHangVe.toLowerCase().includes('thương gia')) baseClass = 'border-blue-900 bg-blue-800 text-white';
+                                                    else if (comp.tenHangVe.toLowerCase().includes('đặc biệt')) baseClass = 'border-emerald-700 bg-emerald-600 text-white';
+                                                    else if (comp.tenHangVe.toLowerCase().includes('phổ thông')) baseClass = 'border-sky-700 bg-sky-600 text-white';
+                                                }
+
+                                                const base = 'h-10 w-10 rounded-lg border-[1px] text-sm font-black transition-all flex items-center justify-center';
+                                                
+                                                let cls = '';
+                                                if (isOccupied) {
+                                                    cls = 'border-slate-200 bg-slate-200 text-slate-400 cursor-not-allowed';
+                                                } else if (isSelected) {
+                                                    cls = 'border-amber-600 bg-amber-500 text-white shadow-[0_0_12px_rgba(245,158,11,0.6)] scale-110 z-10';
+                                                } else if (!isMyClass) {
+                                                    cls = `${baseClass} opacity-20 cursor-not-allowed grayscale-[0.5]`;
+                                                } else {
+                                                    let hoverCls = '';
+                                                    if (comp) {
+                                                        if (comp.tenHangVe.toLowerCase().includes('thương gia')) hoverCls = 'hover:bg-blue-900';
+                                                        else if (comp.tenHangVe.toLowerCase().includes('đặc biệt')) hoverCls = 'hover:bg-emerald-800';
+                                                        else if (comp.tenHangVe.toLowerCase().includes('phổ thông')) hoverCls = 'hover:bg-sky-700';
+                                                    }
+                                                    cls = `${baseClass} ${hoverCls} cursor-pointer shadow-md active:scale-90`;
+                                                }
+
                                                 return (
-                                                    <button key={seatId} type="button" onClick={() => toggleSeat(seatId)} disabled={isOccupied} title={seatId} className={`${base} ${cls}`}>
+                                                    <button key={seatId} type="button" onClick={() => toggleSeat(seatId)} disabled={isOccupied || !isMyClass} title={`${seatId} ${comp ? '- ' + comp.tenHangVe : ''}`} className={`${base} ${cls}`}>
                                                         {isOccupied ? '×' : (isSelected ? c : '')}
                                                     </button>
                                                 );
@@ -471,7 +534,6 @@ export default function FlightDetail() {
                                             );
                                         })}
                                     </div>
-
                                     <p className="mt-4 text-xs text-slate-400 font-medium text-center">
                                         📄 Bảo hiểm có hiệu lực từ khi xuất vé đến khi hoàn thành hành trình. Điều khoản áp dụng theo quy định của công ty bảo hiểm.
                                     </p>
@@ -479,77 +541,22 @@ export default function FlightDetail() {
                             )}
                         </div>
 
+                        {/* Bank Partner Grid */}
+                        <PartnerBanks />
                     </div>
 
                     {/* --- CỘT PHẢI: THÔNG TIN ĐẶT CHỖ --- */}
-                    <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden lg:sticky lg:top-[100px]">
-                        <div className="bg-sky-600 text-white p-4 flex justify-between items-center">
-                            <h3 className="font-bold uppercase tracking-wider text-sm">Thông tin đặt chỗ</h3>
-                            <button className="bg-white text-sky-600 text-xs font-bold px-3 py-1 rounded-full hover:bg-sky-50 transition-colors">Chi Tiết</button>
-                        </div>
-
-                        <div className="p-0">
-                            <div className="px-5 py-4 border-b border-slate-100 flex justify-between items-center cursor-pointer hover:bg-slate-50">
-                                <span className="font-bold text-slate-700">Thông tin hành khách</span>
-                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5 text-slate-400"><path fillRule="evenodd" d="M5.22 8.22a.75.75 0 0 1 1.06 0L10 11.94l3.72-3.72a.75.75 0 1 1 1.06 1.06l-4.25 4.25a.75.75 0 0 1-1.06 0L5.22 9.28a.75.75 0 0 1 0-1.06Z" clipRule="evenodd" /></svg>
-                            </div>
-
-                            <div className="px-5 py-3 bg-sky-50/50 border-b border-sky-100 flex justify-between items-center">
-                                <span className="font-medium text-slate-600">Chuyến đi</span>
-                                <div className="flex items-center gap-2 text-sky-600 font-black">
-                                    {formatMoneyVND(finalTotal)}
-                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4 cursor-pointer hover:text-sky-800"><path d="M2.695 14.763l-1.262 3.154a.5.5 0 00.65.65l3.155-1.262a4 4 0 001.343-.885L17.5 5.5a2.121 2.121 0 00-3-3L3.58 13.42a4 4 0 00-.885 1.343z" /></svg>
-                                </div>
-                            </div>
-
-                            <div className="px-5 py-4 border-b border-slate-100 text-sm">
-                                <p className="font-bold text-slate-800 mb-1">
-                                    {flight.maSanBayDi?.thanhPho || flight.origin} ({flight.maSanBayDi?.maIATA || 'SGN'}) ✈ {flight.maSanBayDen?.thanhPho || flight.destination} ({flight.maSanBayDen?.maIATA || 'VCL'})
-                                </p>
-                                <p className="text-slate-500 font-medium leading-relaxed">
-                                    {formatDateShort(flight.ngayGioKhoiHanh || flight.departureTime)} | {formatTimeOnly(flight.ngayGioKhoiHanh || flight.departureTime)} - {formatTimeOnly(flight.ngayGioHaCanh || flight.arrivalTime)}<br />
-                                    Chuyến bay {flight.flightNumber || flight.maChuyenBay} | Hạng vé {ticketClass === 'BUSINESS' ? 'Thương gia' : 'Phổ thông'}
-                                </p>
-                            </div>
-
-                            {/* Bảng giá chi tiết */}
-                            <div className="px-5 py-3 flex justify-between items-center border-b border-slate-100 hover:bg-slate-50 cursor-pointer">
-                                <span className="font-bold text-slate-700">Giá vé</span>
-                                <span className="font-black text-slate-800">{formatMoneyVND(totalTicketPrice)}</span>
-                            </div>
-                            <div className="px-5 py-3 flex justify-between items-center border-b border-slate-100 hover:bg-slate-50 cursor-pointer">
-                                <span className="font-bold text-slate-700">Phí, thuế</span>
-                                <span className="font-black text-slate-800">{formatMoneyVND(taxesAndFees)}</span>
-                            </div>
-
-                            {/* Hành lý (hiển thị nếu đã chọn) */}
-                            {baggageTotal > 0 && (
-                                <div className="px-5 py-3 flex justify-between items-center border-b border-slate-100 bg-amber-50">
-                                    <span className="font-bold text-amber-700 flex items-center gap-1.5">
-                                        <span>🧳</span> Hành lý ({baggageOption?.label})
-                                    </span>
-                                    <span className="font-black text-amber-700">+{formatMoneyVND(baggageTotal)}</span>
-                                </div>
-                            )}
-
-                            {/* Bảo hiểm (hiển thị nếu đã chọn) */}
-                            {insuranceTotal > 0 && (
-                                <div className="px-5 py-3 flex justify-between items-center border-b border-slate-100 bg-blue-50">
-                                    <span className="font-bold text-blue-600 flex items-center gap-1.5">
-                                        <span>🛡️</span> {insuranceOption?.label}
-                                    </span>
-                                    <span className="font-black text-blue-600">+{formatMoneyVND(insuranceTotal)}</span>
-                                </div>
-                            )}
-
-                            {/* Tổng cộng */}
-                            <div className="px-5 py-4 flex justify-between items-center bg-sky-600 text-white mt-2">
-                                <span className="font-bold text-sky-100 uppercase text-xs tracking-wider">Tổng cộng</span>
-                                <span className="font-black text-xl">{formatMoneyVND(finalTotal)}</span>
-                            </div>
-
-                            {/* Nút Đi tiếp trong Sidebar */}
-                            <div className="p-5">
+                    <BookingSummary 
+                        flight={flight}
+                        pax={pax}
+                        selectedSeats={selectedSeats}
+                        totalPrice={finalTotal}
+                        selectedBaggage={baggageOption}
+                        selectedInsurance={insuranceOption}
+                        ticketClass={ticketClass}
+                        ticketClassDetail={ticketClassDetail}
+                        actionButton={
+                            <>
                                 <button
                                     onClick={() => navigate('/orders', {
                                         state: {
@@ -557,6 +564,8 @@ export default function FlightDetail() {
                                             selectedBaggage: baggageOption,
                                             selectedInsurance: insuranceOption,
                                             totalPrice: finalTotal,
+                                            ticketClass,
+                                            ticketClassDetail,
                                         }
                                     })}
                                     disabled={selectedSeats.length !== totalPassengers}
@@ -570,15 +579,10 @@ export default function FlightDetail() {
                                 >
                                     Quay lại
                                 </button>
-                            </div>
-                        </div>
-                    </div>
-
+                            </>
+                        }
+                    />
                 </div>
-
-                {/* --- BOTTOM BAR REMOVED --- */}
-
-
             </div>
             <Footer />
         </div>

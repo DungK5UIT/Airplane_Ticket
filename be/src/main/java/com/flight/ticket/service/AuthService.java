@@ -3,8 +3,7 @@ package com.flight.ticket.service;
 import com.flight.ticket.dto.AuthResponse;
 import com.flight.ticket.dto.LoginRequest;
 import com.flight.ticket.dto.RegisterRequest;
-import com.flight.ticket.model.Role;
-import com.flight.ticket.model.User;
+import com.flight.ticket.model.NguoiDung;
 import com.flight.ticket.repository.UserRepository;
 import com.flight.ticket.security.JwtUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,70 +30,97 @@ public class AuthService {
 
     public AuthResponse register(RegisterRequest request) {
         if (userRepository.findByEmail(request.getEmail()).isPresent()) {
-            throw new RuntimeException("Email already in use");
+            throw new RuntimeException("Email da duoc su dung");
         }
 
-        User user = new User();
-        user.setName(request.getName());
+        NguoiDung user = new NguoiDung();
+        user.setHoTen(request.getName());
         user.setEmail(request.getEmail());
-        user.setPassword(passwordEncoder.encode(request.getPassword()));
-        user.setRole(request.getRole() != null && request.getRole().equalsIgnoreCase("ADMIN") ? Role.ADMIN : Role.USER);
+        user.setMatKhau(passwordEncoder.encode(request.getPassword()));
+        user.setVaitro(
+                request.getRole() != null && !request.getRole().isBlank()
+                        ? request.getRole().toUpperCase()
+                        : "USER"
+        );
+        user.setVerified(false);
 
         String verificationCode = UUID.randomUUID().toString();
         user.setVerificationCode(verificationCode);
 
         userRepository.save(user);
 
-        // Simulating email sending for verification
         emailService.sendVerificationEmail(user.getEmail(), verificationCode);
 
-        return new AuthResponse(null, "User registered successfully! Please check your email for verification code.");
+        return AuthResponse.builder()
+                .message("Dang ky thanh cong. Vui long kiem tra email de xac thuc.")
+                .role(user.getVaitro())
+                .maNguoiDung(user.getMaNguoiDung())
+                .build();
     }
 
     public AuthResponse login(LoginRequest request) {
-        Optional<User> userOpt = userRepository.findByEmail(request.getEmail());
+        Optional<NguoiDung> userOpt = userRepository.findByEmail(request.getEmail());
 
         if (userOpt.isEmpty()) {
-            throw new RuntimeException("Invalid email or password");
+            throw new RuntimeException("Email hoac mat khau khong dung");
         }
 
-        User user = userOpt.get();
-        if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
-            throw new RuntimeException("Invalid email or password");
+        NguoiDung user = userOpt.get();
+        if (!passwordEncoder.matches(request.getPassword(), user.getMatKhau())) {
+            throw new RuntimeException("Email hoac mat khau khong dung");
         }
 
         if (!user.isVerified()) {
-            throw new RuntimeException("Please verify your email before logging in");
+            throw new RuntimeException("Vui long xac thuc email truoc khi dang nhap");
         }
 
         String jwt = jwtUtils.generateToken(user.getEmail());
-        return new AuthResponse(jwt, "Login successful", user.getRole().toString());
+        return AuthResponse.builder()
+                .token(jwt)
+                .message("Dang nhap thanh cong")
+                .role(user.getVaitro())
+                .maNguoiDung(user.getMaNguoiDung())
+                .build();
     }
 
     public AuthResponse verifyEmail(String code) {
-        Optional<User> userOpt = userRepository.findByVerificationCode(code);
+        Optional<NguoiDung> userOpt = userRepository.findByVerificationCode(code);
         if (userOpt.isEmpty()) {
-            throw new RuntimeException("Invalid verification code");
+            throw new RuntimeException("Ma xac thuc khong hop le");
         }
 
-        User user = userOpt.get();
+        NguoiDung user = userOpt.get();
         user.setVerified(true);
         user.setVerificationCode(null);
         userRepository.save(user);
 
-        return new AuthResponse(null, "Email verified successfully");
+        return AuthResponse.builder()
+                .message("Xac thuc email thanh cong")
+                .role(user.getVaitro())
+                .maNguoiDung(user.getMaNguoiDung())
+                .build();
     }
 
     public AuthResponse forgotPassword(String email) {
-        Optional<User> userOpt = userRepository.findByEmail(email);
-        if (userOpt.isPresent()) {
-            User user = userOpt.get();
-            String resetCode = UUID.randomUUID().toString();
-            // Storing resetCode in verificationCode field for simplicity in this demo
-            user.setVerificationCode(resetCode);
-            userRepository.save(user);
-            emailService.sendPasswordResetEmail(user.getEmail(), resetCode);
+        if (email == null || email.isBlank()) {
+            throw new RuntimeException("Email khong duoc de trong");
         }
-        return new AuthResponse(null, "If the email is registered, a password reset link has been sent.");
+        Optional<NguoiDung> userOpt = userRepository.findByEmail(email);
+        if (userOpt.isPresent()) {
+            NguoiDung user = userOpt.get();
+            // Generate a random 8-character password
+            String newPassword = UUID.randomUUID().toString().substring(0, 8);
+            System.out.println("Gửi mật khẩu mới cho user: " + newPassword);
+            
+            // Hash the new password before storing it into the database
+            user.setMatKhau(passwordEncoder.encode(newPassword));
+            userRepository.save(user);
+            
+            // Send the plain text completely unhashed new password via email
+            emailService.sendPasswordResetEmail(user.getEmail(), newPassword);
+        }
+        return AuthResponse.builder()
+                .message("Neu email ton tai, he thong da gui mat khau moi den email cua ban.")
+                .build();
     }
 }

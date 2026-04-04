@@ -12,14 +12,22 @@ const api = axios.create({
 
 const normalizeAuthResponse = (payload) => {
     const token = payload?.token ?? payload?.accessToken ?? payload?.access_token ?? null;
-    const user = payload?.user ?? null;
+    let user = payload?.user ?? null;
     const role = user?.role ?? payload?.role ?? null;
+    const maNguoiDung = payload?.maNguoiDung ?? user?.maNguoiDung ?? user?.id ?? null;
+
+    if (!user && maNguoiDung) {
+        user = { maNguoiDung, role };
+    } else if (user && maNguoiDung && !user.maNguoiDung) {
+        user.maNguoiDung = maNguoiDung;
+    }
 
     return {
         ...payload,
         token,
         user,
         role,
+        maNguoiDung,
     };
 };
 

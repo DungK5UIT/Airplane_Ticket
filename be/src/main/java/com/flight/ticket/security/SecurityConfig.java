@@ -22,8 +22,11 @@ public class SecurityConfig {
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http.csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
+                        .requestMatchers(org.springframework.http.HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers("/api/auth/**").permitAll()
+                        .requestMatchers("/api/bookings/**").permitAll()
                         .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/flights/**").permitAll()
+                        .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/airports/**").permitAll()
                         .anyRequest().authenticated());
         return http.build();
     }

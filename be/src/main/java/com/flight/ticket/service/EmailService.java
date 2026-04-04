@@ -44,9 +44,9 @@ public class EmailService {
             
             String content = "<div style='font-family: Arial, sans-serif; text-align: center;'>"
                     + "<h2>Đặt lại mật khẩu</h2>"
-                    + "<p>Bạn đã yêu cầu đặt lại mật khẩu. Mã xác nhận của bạn là:</p>"
+                    + "<p>Bạn đã yêu cầu đặt lại mật khẩu. Mật khẩu mới của bạn là:</p>"
                     + "<h1 style='color: #4CAF50;'>" + code + "</h1>"
-                    + "<p>Vui lòng nhập mã này vào trang web để tiếp tục.</p>"
+                    + "<p>Vui lòng đăng nhập với mật khẩu này và đổi lại mật khẩu nếu muốn.</p>"
                     + "</div>";
             
             helper.setText(content, true);

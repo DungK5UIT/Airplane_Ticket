@@ -1,11 +1,14 @@
 package com.flight.ticket.controller;
 
-import com.flight.ticket.model.Flight;
+import com.flight.ticket.dto.FlightDto;
+import com.flight.ticket.model.ChuyenBay;
 import com.flight.ticket.service.FlightService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @RestController
@@ -17,30 +20,35 @@ public class FlightController {
     private FlightService flightService;
 
     @GetMapping
-    public List<Flight> getAllFlights() {
+    public List<FlightDto> getAllFlights() {
         return flightService.getAllFlights();
     }
 
     @GetMapping("/search")
-    public List<Flight> searchFlights(@RequestParam(required = false) String origin,
-                                      @RequestParam(required = false) String destination) {
-        return flightService.searchFlights(origin, destination);
+    public List<FlightDto> searchFlights(
+            @RequestParam(required = false) String origin,
+            @RequestParam(required = false) String destination,
+            @RequestParam(required = false)
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date
+    ) {
+        return flightService.searchFlights(origin, destination, date);
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Flight> getFlightById(@PathVariable Long id) {
+    public ResponseEntity<FlightDto> getFlightById(@PathVariable Integer id) {
         return flightService.getFlightById(id)
-                .map(ResponseEntity::ok)
+                .map(f -> ResponseEntity.ok(flightService.mapToDto(f)))
                 .orElse(ResponseEntity.notFound().build());
     }
 
     @PostMapping
-    public Flight createFlight(@RequestBody Flight flight) {
+    public ChuyenBay createFlight(@RequestBody ChuyenBay flight) {
         return flightService.createFlight(flight);
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Flight> updateFlight(@PathVariable Long id, @RequestBody Flight flightDetails) {
+    public ResponseEntity<ChuyenBay> updateFlight(@PathVariable Integer id,
+                                                  @RequestBody ChuyenBay flightDetails) {
         try {
             return ResponseEntity.ok(flightService.updateFlight(id, flightDetails));
         } catch (RuntimeException e) {
@@ -49,7 +57,7 @@ public class FlightController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteFlight(@PathVariable Long id) {
+    public ResponseEntity<Void> deleteFlight(@PathVariable Integer id) {
         try {
             flightService.deleteFlight(id);
             return ResponseEntity.ok().build();

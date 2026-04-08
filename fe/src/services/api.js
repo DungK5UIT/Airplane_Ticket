@@ -69,6 +69,49 @@ export const authService = {
         }
     },
 
+    getUserProfile: async (userId) => {
+        const user = authService.getCurrentUser();
+        const response = await api.get(`/api/users/${userId}`, {
+            headers: {
+                'Authorization': `Bearer ${user?.token}`
+            }
+        });
+        return response.data;
+    },
+
+    updateUserProfile: async (userId, userData) => {
+        const user = authService.getCurrentUser();
+        const response = await api.put(`/api/users/${userId}`, userData, {
+            headers: {
+                'Authorization': `Bearer ${user?.token}`
+            }
+        });
+        return response.data;
+    },
+
+    changePassword: async (userId, passwordData) => {
+        const user = authService.getCurrentUser();
+        const response = await api.put(`/api/users/${userId}/change-password`, passwordData, {
+            headers: {
+                'Authorization': `Bearer ${user?.token}`
+            }
+        });
+        return response.data;
+    },
+
+    getUserBookings: async (userId) => {
+        const user = authService.getCurrentUser();
+        const response = await api.get(`/api/bookings/user/${userId}`, {
+            headers: {
+                'Authorization': `Bearer ${user?.token}`
+            }
+        });
+        return response.data;
+    },
+
+
+
+
     // Flight Services
     getAllFlights: async () => {
         const response = await api.get('/api/flights');
@@ -79,6 +122,11 @@ export const authService = {
         const response = await api.get('/api/flights/search', {
             params: { origin, destination }
         });
+        return response.data;
+    },
+
+    getBookedSeats: async (id) => {
+        const response = await api.get(`/api/flights/${id}/booked-seats`);
         return response.data;
     },
 
@@ -105,6 +153,33 @@ export const authService = {
     deleteFlight: async (id) => {
         const user = authService.getCurrentUser();
         const response = await api.delete(`/api/flights/${id}`, {
+            headers: {
+                'Authorization': `Bearer ${user.token}`
+            }
+        });
+        return response.data;
+    },
+
+    // Promotion Services
+    getPromotions: async () => {
+        const response = await api.get('/api/promotions');
+        return response.data;
+    },
+
+    getActivePromotions: async () => {
+        const response = await api.get('/api/promotions/active');
+        return response.data;
+    },
+
+    // Regulation (Quy Dinh) Services
+    getQuyDinh: async () => {
+        const response = await api.get('/api/quy-dinh');
+        return response.data;
+    },
+
+    updateQuyDinh: async (quyDinhData) => {
+        const user = authService.getCurrentUser();
+        const response = await api.put('/api/quy-dinh', quyDinhData, {
             headers: {
                 'Authorization': `Bearer ${user.token}`
             }

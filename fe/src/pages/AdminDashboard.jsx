@@ -101,6 +101,9 @@ const AdminDashboard = () => {
                 <nav className="flex flex-1 flex-col gap-2">
                     <div className="flex items-center gap-2 rounded-lg bg-slate-700 px-4 py-3 font-semibold text-cyan-300"><span>📊</span> Tổng quan</div>
                     <div className="flex items-center gap-2 rounded-lg px-4 py-3 text-slate-300"><span>✈️</span> Quản lý chuyến bay</div>
+                    <Link to="/admin/regulations" className="flex items-center gap-2 rounded-lg px-4 py-3 text-slate-300 hover:bg-slate-800 transition-colors">
+                        <span>⚖️</span> Thay đổi quy định
+                    </Link>
                     <div className="flex items-center gap-2 rounded-lg px-4 py-3 text-slate-300"><span>👤</span> Quản lý người dùng</div>
                     <div className="flex items-center gap-2 rounded-lg px-4 py-3 text-slate-300"><span>🎫</span> Đơn đặt vé</div>
                 </nav>

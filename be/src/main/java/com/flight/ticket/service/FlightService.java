@@ -5,6 +5,7 @@ import com.flight.ticket.model.CT_ChuyenBay;
 import com.flight.ticket.model.ChuyenBay;
 import com.flight.ticket.repository.FlightDetailRepository;
 import com.flight.ticket.repository.FlightRepository;
+import com.flight.ticket.repository.CT_DatVeRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -22,6 +23,9 @@ public class FlightService {
 
     @Autowired
     private FlightDetailRepository ctChuyenBayRepository;
+
+    @Autowired
+    private CT_DatVeRepository ctDatVeRepository;
 
     public FlightDto mapToDto(ChuyenBay cb) {
         FlightDto dto = FlightDto.builder()
@@ -133,5 +137,9 @@ public class FlightService {
 
     public Optional<ChuyenBay> getFlightById(Integer id) {
         return flightRepository.findById(id);
+    }
+
+    public List<String> getBookedSeats(Integer flightId) {
+        return ctDatVeRepository.findBookedSeatsByMaChuyenBay(flightId);
     }
 }

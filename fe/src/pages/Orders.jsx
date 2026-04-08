@@ -76,6 +76,59 @@ export default function Orders() {
     const taxesAndFees = fareAndTaxes - totalTicketPrice;
 
     const [contact, setContact] = useState({ name: '', email: '', phone: '' });
+    const [promoCode, setPromoCode] = useState('');
+    const [appliedPromo, setAppliedPromo] = useState(null);
+    const [isApplyingPromo, setIsApplyingPromo] = useState(false);
+    const [promoError, setPromoError] = useState('');
+    const [activePromotions, setActivePromotions] = useState([]);
+
+    React.useEffect(() => {
+        const fetchPromos = async () => {
+            try {
+                const promos = await authService.getActivePromotions();
+                setActivePromotions(promos || []);
+            } catch (error) {
+                console.error("Failed to fetch promotions:", error);
+            }
+        };
+        fetchPromos();
+    }, []);
+
+    const handleApplyPromo = () => {
+        if (!promoCode.trim()) {
+            setPromoError('Vui lòng nhập mã ưu đãi');
+            return;
+        }
+        setIsApplyingPromo(true);
+        setPromoError('');
+        
+        // Find in fetched promos - using the correct property 'code' from backend
+        const promo = activePromotions.find(p => p?.code?.toUpperCase() === promoCode.trim().toUpperCase());
+        
+        setTimeout(() => {
+            if (promo) {
+                setAppliedPromo(promo);
+                setPromoError('');
+            } else {
+                setPromoError('Mã ưu đãi không hợp lệ hoặc đã hết hạn');
+                setAppliedPromo(null);
+            }
+            setIsApplyingPromo(false);
+        }, 600);
+    };
+
+    const calculateDiscount = () => {
+        if (!appliedPromo) return 0;
+        
+        // Check if it's percentage discount or fixed amount based on backend fields
+        if (appliedPromo.phanTramGiam > 0) {
+            return (totalPrice * (appliedPromo.phanTramGiam / 100));
+        }
+        return appliedPromo.mucGiamGia || 0; // Fallback to mucGiamGia if available
+    };
+
+    const discountAmount = calculateDiscount();
+    const finalPrice = totalPrice - discountAmount;
 
     // Create initial passenger lists based on pax object from previous steps
     const [passengers, setPassengers] = useState(() => {
@@ -152,22 +205,24 @@ export default function Orders() {
             // Map to backend BookingRequestDto
             const requestData = {
                 maNguoiDung: maNguoiDung,
-                maKhuyenMai: null, // Update this if promo code logic is added
-                tongTien: totalPrice,
+                maKhuyenMai: appliedPromo?.maKhuyenMai || null, 
+                tongTien: finalPrice,
                 passengers: passengers.map((p, i) => ({
                     maChuyenBay: flight.maChuyenBay || flight.id,
                     maHangVe: ticketClassDetail?.maHangVe || (ticketClass === 'BUSINESS' ? 2 : 1),
                     hoTenHK: p.fullName,
                     cccd: p.cccd || null,
-                    ngaySinh: p.dob, // Format: YYYY-MM-DD
+                    ngaySinh: p.dob, 
                     gioiTinh: p.gioiTinh === 'Nam' ? 'Nam' : 'Nữ',
                     doiTuong: p.type === 'adult' ? 'NGUOI_LON' : (p.type === 'child' ? 'TRE_EM' : 'EM_BE'),
                     soGhe: selectedSeats[i],
-                    giaVe: (totalPrice - ((selectedBaggage?.price || 0) + (selectedInsurance?.price || 0)) * passengers.length) / passengers.length, 
+                    giaVe: (finalPrice - ((selectedBaggage?.price || 0) + (selectedInsurance?.price || 0)) * passengers.length) / passengers.length, 
                     giaHanhLy: selectedBaggage?.price || 0,
-                    canNangHanhLy: selectedBaggage?.kg || 0
+                    canNangHanhLy: selectedBaggage?.weight || 0,
+                    giaBaoHiem: selectedInsurance?.price || 0
                 }))
             };
+
 
             // Forward data to payment page
             navigate('/payment', {
@@ -176,11 +231,13 @@ export default function Orders() {
                     flight,
                     pax,
                     selectedSeats,
-                    totalPrice,
+                    totalPrice: finalPrice,
                     selectedBaggage,
                     selectedInsurance,
                     ticketClass,
-                    ticketClassDetail
+                    ticketClassDetail,
+                    originalPrice: totalPrice,
+                    discountAmount: discountAmount
                 }
             });
         } catch (error) {
@@ -324,6 +381,64 @@ export default function Orders() {
                             ))}
                         </div>
 
+                        {/* Mã giảm giá / Ưu đãi */}
+                        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+                            <h2 className="mb-5 flex items-center gap-3 text-lg font-bold text-slate-800">
+                                <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-sky-100 text-sm font-black text-sky-600">3</span> 
+                                Mã giảm giá / Ưu đãi
+                            </h2>
+                            <div className="flex flex-col gap-3">
+                                <div className="flex gap-2">
+                                    <div className="relative flex-grow">
+                                        <input
+                                            type="text"
+                                            className={`h-12 w-full rounded-xl border ${promoError ? 'border-red-400 focus:ring-red-50' : 'border-slate-200 focus:border-sky-500 focus:ring-sky-50'} px-4 text-sm font-bold outline-none ring-4 ring-transparent transition-all placeholder:font-medium`}
+                                            placeholder="Nhập mã ưu đãi của bạn"
+                                            value={promoCode}
+                                            onChange={e => setPromoCode(e.target.value.toUpperCase())}
+                                            disabled={appliedPromo !== null}
+                                        />
+                                        {appliedPromo && (
+                                            <div className="absolute right-3 top-1/2 -translate-y-1/2 text-emerald-500 bg-emerald-50 rounded-full p-1">
+                                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4.13-5.68a.75.75 0 00.1-.321z" clipRule="evenodd" /></svg>
+                                            </div>
+                                        )}
+                                    </div>
+                                    {appliedPromo ? (
+                                        <button 
+                                            type="button"
+                                            onClick={() => { setAppliedPromo(null); setPromoCode(''); }}
+                                            className="h-12 px-6 rounded-xl bg-slate-100 text-slate-600 font-bold hover:bg-slate-200 transition-all text-sm"
+                                        >
+                                            Gỡ bỏ
+                                        </button>
+                                    ) : (
+                                        <button 
+                                            type="button"
+                                            onClick={handleApplyPromo}
+                                            disabled={isApplyingPromo || !promoCode}
+                                            className="h-12 px-6 rounded-xl bg-slate-800 text-white font-bold hover:bg-slate-900 transition-all text-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                                        >
+                                            {isApplyingPromo ? (
+                                                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                                            ) : 'Áp dụng'}
+                                        </button>
+                                    )}
+                                </div>
+                                {promoError && <p className="text-red-500 text-xs font-bold px-1">{promoError}</p>}
+                                {appliedPromo && (
+                                    <div className="bg-emerald-50 border border-emerald-100 rounded-xl p-4 flex items-start gap-3">
+                                        <div className="text-emerald-600 pt-0.5">✨</div>
+                                        <div>
+                                            <p className="text-emerald-800 text-sm font-black">Áp dụng thành công: {appliedPromo.tenChuongTrinh || appliedPromo.tenKhuyenMai}</p>
+                                            <p className="text-emerald-600 text-xs font-bold leading-relaxed">{appliedPromo.moTaTenChuongTrinh || appliedPromo.moTa}</p>
+                                            <p className="text-emerald-700 text-sm font-black mt-1">Tiết kiệm: -{formatMoneyVND(discountAmount)}</p>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+
                         {/* Submit button */}
                         <button type="submit" className="mt-2 flex h-14 w-full items-center justify-center gap-2 rounded-xl bg-sky-600 text-base font-bold text-white transition-all hover:bg-sky-700 shadow-sm disabled:opacity-50">
                             Tiến hành thanh toán
@@ -339,7 +454,8 @@ export default function Orders() {
                     flight={flight}
                     pax={pax}
                     selectedSeats={selectedSeats}
-                    totalPrice={totalPrice}
+                    totalPrice={finalPrice}
+                    discount={discountAmount}
                     selectedBaggage={selectedBaggage}
                     selectedInsurance={selectedInsurance}
                     ticketClass={ticketClass}
@@ -348,9 +464,12 @@ export default function Orders() {
                         <button
                             type="submit"
                             form="order-form"
-                            className="w-full py-3 rounded-xl bg-sky-600 text-white font-bold hover:bg-sky-700 transition-colors shadow-sm"
+                            className="w-full py-3 rounded-xl bg-orange-500 text-white font-black text-base hover:bg-orange-600 transition-colors shadow-md flex justify-center items-center gap-2"
                         >
-                            Thanh toán ngay
+                            Tiến hành thanh toán
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                            </svg>
                         </button>
                     }
                 />

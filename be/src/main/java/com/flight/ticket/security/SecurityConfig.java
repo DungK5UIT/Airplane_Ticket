@@ -8,10 +8,16 @@ import org.springframework.security.config.annotation.web.configurers.AbstractHt
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
+
+    @Bean
+    public JwtAuthFilter jwtAuthFilter() {
+        return new JwtAuthFilter();
+    }
 
     @Bean
     public PasswordEncoder passwordEncoder() {
@@ -27,7 +33,11 @@ public class SecurityConfig {
                         .requestMatchers("/api/bookings/**").permitAll()
                         .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/flights/**").permitAll()
                         .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/airports/**").permitAll()
+                        .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/promotions/**").permitAll()
+                        .requestMatchers("/api/tickets/**").permitAll()
                         .anyRequest().authenticated());
+        
+        http.addFilterBefore(jwtAuthFilter(), UsernamePasswordAuthenticationFilter.class);
         return http.build();
     }
 }

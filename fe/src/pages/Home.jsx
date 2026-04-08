@@ -81,6 +81,9 @@ const Home = () => {
         (a.tenSanBay && a.tenSanBay.toLowerCase().includes(searchDestText.toLowerCase()))
     );
 
+    const [promos, setPromos] = useState([]);
+    const [promoLoading, setPromoLoading] = useState(true);
+
     useEffect(() => {
         authService.getCurrentUser();
 
@@ -92,7 +95,21 @@ const Home = () => {
                 console.error("Failed to fetch airports", error);
             }
         };
+
+        const fetchPromos = async () => {
+            try {
+                setPromoLoading(true);
+                const data = await authService.getActivePromotions();
+                setPromos(data.slice(0, 3)); // Lấy 3 ưu đãi đầu tiên để hiển thị ở Home
+                setPromoLoading(false);
+            } catch (error) {
+                console.error("Failed to fetch promotions", error);
+                setPromoLoading(false);
+            }
+        };
+
         fetchAirports();
+        fetchPromos();
     }, []);
 
     useEffect(() => {
@@ -360,7 +377,7 @@ const Home = () => {
             </div>
 
             {/* DESIGN MỚI CHO ĐIỂM ĐẾN NỔI BẬT THÁNG NÀY */}
-            <section className="px-[8vw] pb-24 pt-24 max-w-[1400px] mx-auto">
+            <section className="px-[8vw] pb-12 pt-24 max-w-[1400px] mx-auto">
                 <div className="flex flex-col lg:flex-row gap-10">
                     {/* Phần tiêu đề nằm bên trái */}
                     <div className="lg:w-1/4 flex-shrink-0 pt-4">
@@ -381,6 +398,79 @@ const Home = () => {
                                 </div>
                             </div>
                         ))}
+                    </div>
+                </div>
+            </section>
+
+            {/* PHẦN ƯU ĐÃI ĐẶC BIỆT MỚI THÊM - ĐÃ ĐỔI SANG TONE TRẮNG */}
+            <section className="px-[8vw] py-20 bg-white relative">
+                <div className="max-w-[1240px] mx-auto relative z-10">
+                    <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-6">
+                        <div>
+                            <span className="mb-4 inline-block text-amber-600 font-black text-xs uppercase tracking-[0.2em]">FlyViet Promotions</span>
+                            <h2 className="text-4xl md:text-5xl font-black text-slate-900 leading-tight">Ưu đãi đặc biệt <br />dành cho bạn</h2>
+                        </div>
+                        <button 
+                            onClick={() => navigate('/promotions')}
+                            className="text-amber-600 font-bold hover:text-amber-700 transition-colors flex items-center gap-2 group"
+                        >
+                            Xem tất cả ưu đãi
+                            <svg className="w-5 h-5 translate-x-0 group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                            </svg>
+                        </button>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                        {promoLoading ? (
+                            Array(3).fill(0).map((_, i) => (
+                                <div key={i} className="bg-slate-50 h-80 rounded-[2rem] animate-pulse border border-slate-100"></div>
+                            ))
+                        ) : promos.length === 0 ? (
+                            <div className="col-span-full py-20 text-center">
+                                <p className="text-slate-400 font-bold text-lg">Hiện chưa có ưu đãi đặc biệt nào mới.</p>
+                            </div>
+                        ) : (
+                            promos.map((promo, idx) => (
+                                <div key={idx} className="bg-white rounded-[2rem] overflow-hidden shadow-sm hover:shadow-xl transition-all duration-500 border border-slate-100 group flex flex-col h-full">
+                                    <div className="relative aspect-[16/10] overflow-hidden">
+                                        <img 
+                                            src={promo.urlImage || "https://images.unsplash.com/photo-1540339832862-474559151b31?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80"} 
+                                            alt={promo.tenChuongTrinh} 
+                                            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" 
+                                        />
+                                        <div className="absolute top-4 left-4">
+                                            <span className="bg-amber-500 text-white text-[10px] font-black px-4 py-1.5 rounded-full uppercase tracking-widest shadow-lg">
+                                                {promo.phanTramGiam > 0 ? `GIẢM ${promo.phanTramGiam}%` : "ƯU ĐÃI"}
+                                            </span>
+                                        </div>
+                                        <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex items-center justify-center">
+                                            <button 
+                                                onClick={() => navigate('/promotions')}
+                                                className="bg-white text-slate-900 font-black px-6 py-3 rounded-2xl transform translate-y-4 group-hover:translate-y-0 transition-all duration-500 hover:bg-amber-500 hover:text-white"
+                                            >
+                                                Xem chi tiết
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div className="p-6 flex flex-col flex-grow">
+                                        <h3 className="text-xl font-bold text-slate-900 mb-2 group-hover:text-amber-600 transition-colors uppercase line-clamp-1">
+                                            {promo.tenChuongTrinh}
+                                        </h3>
+                                        <div className="flex items-center justify-between mt-auto pt-4 border-t border-slate-50">
+                                            <div className="flex flex-col">
+                                                <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Mã Code</span>
+                                                <span className="text-sm font-bold text-amber-500">{promo.code}</span>
+                                            </div>
+                                            <div className="bg-slate-50 px-3 py-1.5 rounded-xl border border-dashed border-slate-200">
+                                                <span className="text-[10px] font-bold text-slate-400 block leading-none mb-1">CÒN LẠI</span>
+                                                <span className="text-sm font-bold text-slate-700">{promo.soLuongConLai} suất</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            ))
+                        )}
                     </div>
                 </div>
             </section>

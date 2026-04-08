@@ -65,4 +65,9 @@ public class FlightController {
             return ResponseEntity.notFound().build();
         }
     }
+
+    @GetMapping("/{id}/booked-seats")
+    public ResponseEntity<List<String>> getBookedSeats(@PathVariable Integer id) {
+        return ResponseEntity.ok(flightService.getBookedSeats(id));
+    }
 }

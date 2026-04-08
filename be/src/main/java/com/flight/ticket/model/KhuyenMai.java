@@ -25,6 +25,9 @@ public class KhuyenMai {
     @Column(name = "TenChuongTrinh")
     private String tenChuongTrinh;
 
+    @Column(name = "MoTaTenChuongTrinh")
+    private String moTaTenChuongTrinh;
+
     @Column(name = "PhanTramGiam")
     private BigDecimal phanTramGiam;
 
@@ -39,4 +42,7 @@ public class KhuyenMai {
 
     @Column(name = "SoLuongConLai")
     private int soLuongConLai;
+
+    @Column(name = "UrlImage")
+    private String urlImage;
 }

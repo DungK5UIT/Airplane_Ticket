@@ -27,13 +27,13 @@ public class CT_ChuyenBay {
     @JoinColumn(name = "MaHangVe", referencedColumnName = "MaHangVe")
     private HangVe hangVe;
 
-    @Column(name = "so_luong_cho")
+    @Column(name = "SoLuongCho")
     private int soLuongCho;
 
-    @Column(name = "so_luong_con_lai")
+    @Column(name = "SoLuongConLai")
     private int soLuongConLai;
 
-    @Column(name = "gia_co_ban")
+    @Column(name = "GiaCoBan")
     private double giaCoBan;
 
     @Embeddable

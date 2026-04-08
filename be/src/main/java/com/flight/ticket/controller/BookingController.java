@@ -36,4 +36,13 @@ public class BookingController {
             return ResponseEntity.internalServerError().body("Lỗi hệ thống trong quá trình đặt vé");
         }
     }
+
+    @GetMapping("/user/{userId}")
+    public ResponseEntity<?> getMyBookings(@PathVariable int userId) {
+        try {
+            return ResponseEntity.ok(bookingService.getBookingsByUser(userId));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
 }

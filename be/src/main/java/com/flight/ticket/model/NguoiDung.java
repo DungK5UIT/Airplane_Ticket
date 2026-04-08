@@ -44,6 +44,9 @@ public class NguoiDung {
     @Column(name = "VaiTro")
     private String vaitro;
 
+    @Column(name = "GioiTinh")
+    private String gioiTinh;
+
     @Column(name = "IsVerified")
     private boolean isVerified = false;
 

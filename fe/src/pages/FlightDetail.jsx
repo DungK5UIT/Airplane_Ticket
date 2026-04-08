@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { authService } from '../services/api';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import BookingSummary from '../components/BookingSummary';
@@ -152,55 +153,38 @@ export default function FlightDetail() {
     useEffect(() => {
         window.scrollTo(0, 0); // Đảm bảo trang bắt đầu ở trên cùng
         if (!flight) { navigate('/flight'); return; }
-        const hash = flight.id ? flight.id.split('').reduce((a, b) => a + b.charCodeAt(0), 0) : flight.maChuyenBay || 123;
-        const seedRandom = (seed) => {
-            let t = seed += 0x6D2B79F5;
-            t = Math.imul(t ^ t >>> 15, t | 1);
-            t ^= t + Math.imul(t ^ t >>> 7, t | 61);
-            return ((t ^ t >>> 14) >>> 0) / 4294967296;
+        const fetchBookedSeats = async () => {
+            try {
+                const flightId = flight.id || flight.maChuyenBay;
+                if (!flightId) return;
+                const backendBooked = await authService.getBookedSeats(flightId);
+                setOccupiedSeats(backendBooked || []);
+            } catch (error) {
+                console.error('Lỗi khi lấy danh sách ghế thực tế:', error);
+                setOccupiedSeats([]);
+            }
         };
-        
+
         const totalSeats = flight.soLuongCho || 120;
-        const totalRows = Math.ceil(totalSeats / 6);
-        
         let compartments = [];
         if (flight.chiTietHangVe && flight.chiTietHangVe.length > 0) {
-            compartments = [...flight.chiTietHangVe].sort((a,b) => {
+            compartments = [...flight.chiTietHangVe].sort((a, b) => {
                 const getRank = t => t.toLowerCase().includes('thương gia') ? 1 : (t.toLowerCase().includes('đặc biệt') ? 2 : 3);
                 return getRank(a.tenHangVe) - getRank(b.tenHangVe);
             });
         } else {
-            compartments = [{ tenHangVe: 'Phổ thông', soLuongCho: totalSeats, soLuongChoConLai: totalSeats - Math.floor(totalSeats * 0.3) }];
+            compartments = [{ tenHangVe: 'Phổ thông', soLuongCho: totalSeats, soLuongChoConLai: totalSeats }];
         }
 
         let currentIndex = 0;
         const compData = compartments.map(c => {
-           const start = currentIndex;
-           currentIndex += (c.soLuongCho || 0);
-           const end = currentIndex;
-           const occupiedCount = (c.soLuongCho || 0) - (c.soLuongChoConLai || 0);
-           return { ...c, start, end, occupiedCount };
+            const start = currentIndex;
+            currentIndex += (c.soLuongCho || 0);
+            const end = currentIndex;
+            return { ...c, start, end };
         });
         setSeatCompartments(compData);
-
-        let newOccupied = [];
-        compData.forEach(comp => {
-            const compSeats = [];
-            for (let i = comp.start; i < comp.end; i++) {
-                const r = Math.floor(i / 6) + 1;
-                const c = SEAT_COLS[i % 6];
-                compSeats.push(`${r}${c}`);
-            }
-            let seed = hash + comp.start;
-            const shuffled = [...compSeats];
-            for (let i = shuffled.length - 1; i > 0; i--) {
-                const j = Math.floor(seedRandom(seed++) * (i + 1));
-                [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-            }
-            newOccupied = [...newOccupied, ...shuffled.slice(0, Math.max(0, comp.occupiedCount))];
-        });
-
-        setOccupiedSeats(newOccupied);
+        fetchBookedSeats();
     }, [flight, navigate]);
 
     if (!flight) return null;
@@ -209,12 +193,13 @@ export default function FlightDetail() {
         if (occupiedSeats.includes(seatId)) return;
         setSelectedSeats(prev => {
             const isRemoving = prev.includes(seatId);
-            const nextSeats = isRemoving ? prev.filter(s => s !== seatId) : [...prev, seatId];
-
             if (!isRemoving && prev.length >= totalPassengers) {
-                setPax(p => ({ ...p, adult: p.adult + 1 }));
+                // Nếu chỉ có 1 khách, cho phép đổi ghế (swap)
+                if (totalPassengers === 1) return [seatId];
+                // Nếu nhiều khách, yêu cầu bỏ chọn ghế cũ trước khi chọn ghế mới
+                return prev;
             }
-            return nextSeats;
+            return isRemoving ? prev.filter(s => s !== seatId) : [...prev, seatId];
         });
     };
 
@@ -283,15 +268,15 @@ export default function FlightDetail() {
                                             const totalSeats = flight.soLuongCho || 120;
                                             const leftSeats = SEAT_COLS.slice(0, 3);
                                             const rightSeats = SEAT_COLS.slice(3, 6);
-                                            
+
                                             const renderSeat = (c) => {
                                                 const seatIndex = rIdx * 6 + SEAT_COLS.indexOf(c);
                                                 if (seatIndex >= totalSeats) return <div key={`empty-${rowNum}-${c}`} className="w-10 h-10" />;
-                                                
+
                                                 const seatId = `${rowNum}${c}`;
                                                 const isOccupied = occupiedSeats.includes(seatId);
                                                 const isSelected = selectedSeats.includes(seatId);
-                                                
+
                                                 const comp = seatCompartments.find(comp => seatIndex >= comp.start && seatIndex < comp.end);
                                                 const isMyClass = ticketClassDetail && comp ? (comp.maHangVe === ticketClassDetail.maHangVe) : true;
 
@@ -303,7 +288,7 @@ export default function FlightDetail() {
                                                 }
 
                                                 const base = 'h-10 w-10 rounded-lg border-[1px] text-sm font-black transition-all flex items-center justify-center';
-                                                
+
                                                 let cls = '';
                                                 if (isOccupied) {
                                                     cls = 'border-slate-200 bg-slate-200 text-slate-400 cursor-not-allowed';
@@ -546,7 +531,7 @@ export default function FlightDetail() {
                     </div>
 
                     {/* --- CỘT PHẢI: THÔNG TIN ĐẶT CHỖ --- */}
-                    <BookingSummary 
+                    <BookingSummary
                         flight={flight}
                         pax={pax}
                         selectedSeats={selectedSeats}

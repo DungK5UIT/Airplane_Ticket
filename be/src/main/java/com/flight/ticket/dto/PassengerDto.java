@@ -21,4 +21,5 @@ public class PassengerDto {
     private BigDecimal giaVe;
     private BigDecimal giaHanhLy;
     private int canNangHanhLy;
+    private Integer giaBaoHiem;
 }

@@ -71,5 +71,9 @@ public class CT_DatVe {
     @Builder.Default
     @Column(name = "CanNangHanhLy")
     private int canNangHanhLy = 0;
+
+    @Builder.Default
+    @Column(name = "GiaBaoHiem")
+    private Integer giaBaoHiem = 0;
 }
 

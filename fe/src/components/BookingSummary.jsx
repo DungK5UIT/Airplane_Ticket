@@ -50,7 +50,8 @@ export default function BookingSummary({
     ticketClass, 
     ticketClassDetail,
     onEdit,
-    actionButton 
+    actionButton,
+    discount = 0  // Added discount prop
 }) {
     if (!flight) return null;
 
@@ -59,9 +60,13 @@ export default function BookingSummary({
     // Recalculate breakdown for display
     const baggageTotal = (selectedBaggage?.price || 0) * totalPassengers;
     const insuranceTotal = (selectedInsurance?.price || 0) * totalPassengers;
-    const fareAndTaxes = totalPrice - baggageTotal - insuranceTotal;
-    const totalTicketPrice = fareAndTaxes / 1.2;
-    const taxesAndFees = fareAndTaxes - totalTicketPrice;
+    
+    // totalTicketPrice is the base price (before baggage/insurance and BEFORE discount)
+    // Actually, totalPrice passed here is the FINAL price.
+    // So to show the correct breakdown:
+    const originalTotalPrice = totalPrice + discount;
+    const totalTicketPrice = originalTotalPrice - baggageTotal - insuranceTotal;
+
 
     return (
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden lg:sticky lg:top-[100px] h-fit" style={{ fontFamily: "'Nunito', sans-serif" }}>
@@ -108,15 +113,11 @@ export default function BookingSummary({
                     </p>
                 </div>
 
-                {/* Bảng giá chi tiết */}
                 <div className="px-5 py-3 flex justify-between items-center border-b border-slate-100 hover:bg-slate-50 cursor-pointer">
                     <span className="font-bold text-slate-700">Giá vé</span>
                     <span className="font-black text-slate-800">{formatMoneyVND(totalTicketPrice)}</span>
                 </div>
-                <div className="px-5 py-3 flex justify-between items-center border-b border-slate-100 hover:bg-slate-50 cursor-pointer">
-                    <span className="font-bold text-slate-700">Phí, thuế</span>
-                    <span className="font-black text-slate-800">{formatMoneyVND(taxesAndFees)}</span>
-                </div>
+
 
                 {/* Hành lý */}
                 {baggageTotal > 0 && (
@@ -135,6 +136,16 @@ export default function BookingSummary({
                             <span>🛡️</span> {selectedInsurance?.label}
                         </span>
                         <span className="font-black text-blue-600">+{formatMoneyVND(insuranceTotal)}</span>
+                    </div>
+                )}
+
+                {/* Ưu đãi / Giảm giá */}
+                {discount > 0 && (
+                    <div className="px-5 py-3 flex justify-between items-center border-b border-slate-100 bg-emerald-50">
+                        <span className="font-bold text-emerald-600 flex items-center gap-1.5">
+                            <span>✨</span> Ưu đãi đã áp dụng
+                        </span>
+                        <span className="font-black text-emerald-600">-{formatMoneyVND(discount)}</span>
                     </div>
                 )}
 

@@ -77,7 +77,8 @@ export default function Payment() {
         selectedBaggage,
         selectedInsurance,
         ticketClass,
-        ticketClassDetail
+        ticketClassDetail,
+        discountAmount = 0
     } = state;
 
     const totalPassengers = pax.adult + pax.child + pax.infant;
@@ -91,7 +92,7 @@ export default function Payment() {
     const submitBooking = async (methodInfo) => {
         setIsProcessing(true);
         const user = authService.getCurrentUser();
-
+        console.log("[DEBUG Frontend] Current user:", user);
         try {
             // Data is already mapped in Orders.jsx to BookingRequestDto
             const finalData = { ...requestData };
@@ -215,6 +216,7 @@ export default function Payment() {
                     pax={pax}
                     selectedSeats={selectedSeats}
                     totalPrice={totalPrice}
+                    discount={discountAmount}
                     selectedBaggage={selectedBaggage}
                     selectedInsurance={selectedInsurance}
                     ticketClass={ticketClass}

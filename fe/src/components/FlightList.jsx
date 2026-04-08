@@ -133,11 +133,11 @@ const FlightList = ({
                 });
             }
         });
-        
+
         // Sắp xếp thứ tự: Phổ thông -> Phổ thông đặc biệt -> Thương gia
         const arr = Array.from(classesMap.values());
         const order = ['phổ thông', 'phổ thông đặc biệt', 'thương gia'];
-        return arr.sort((a,b) => {
+        return arr.sort((a, b) => {
             const iA = order.findIndex(x => a.toLowerCase().includes(x));
             const iB = order.findIndex(x => b.toLowerCase().includes(x));
             const posA = iA !== -1 ? iA : 99;
@@ -190,11 +190,11 @@ const FlightList = ({
                                 <div className="w-[40%] bg-white border-r border-white"></div>
                                 {allTicketClasses.map((className, idx) => {
                                     const colors = ['bg-sky-500', 'bg-emerald-600', 'bg-blue-800', 'bg-amber-600'];
-                                    
+
                                     let colorIdx = idx;
-                                    if(className.toLowerCase().includes('thương gia')) colorIdx = 2;
-                                    else if(className.toLowerCase().includes('đặc biệt')) colorIdx = 1;
-                                    else if(className.toLowerCase().includes('phổ thông')) colorIdx = 0;
+                                    if (className.toLowerCase().includes('thương gia')) colorIdx = 2;
+                                    else if (className.toLowerCase().includes('đặc biệt')) colorIdx = 1;
+                                    else if (className.toLowerCase().includes('phổ thông')) colorIdx = 0;
 
                                     const bgClass = colors[colorIdx % colors.length];
                                     return (
@@ -247,18 +247,18 @@ const FlightList = ({
                                                 const hv = f.chiTietHangVe?.find(x => x.tenHangVe === className);
                                                 const isSoldOut = !hv || hv.soLuongChoConLai <= 0;
                                                 const isExpanded = hv && expandedMenu.flightId === f.maChuyenBay && expandedMenu.tab === `ticket_${hv.maHangVe}`;
-                                                
+
                                                 let colorIdx = idx;
-                                                if(className.toLowerCase().includes('thương gia')) colorIdx = 2;
-                                                else if(className.toLowerCase().includes('đặc biệt')) colorIdx = 1;
-                                                else if(className.toLowerCase().includes('phổ thông')) colorIdx = 0;
+                                                if (className.toLowerCase().includes('thương gia')) colorIdx = 2;
+                                                else if (className.toLowerCase().includes('đặc biệt')) colorIdx = 1;
+                                                else if (className.toLowerCase().includes('phổ thông')) colorIdx = 0;
 
                                                 const colorsHover = ['hover:bg-sky-50', 'hover:bg-emerald-50', 'hover:bg-blue-50', 'hover:bg-amber-50'];
                                                 const hoverClass = colorsHover[colorIdx % colorsHover.length];
 
                                                 const textColors = ['text-sky-600', 'text-emerald-600', 'text-blue-800', 'text-amber-600'];
                                                 const textColor = textColors[colorIdx % 4];
-                                                
+
                                                 const btnColors = ['hover:bg-sky-500', 'hover:bg-emerald-600', 'hover:bg-blue-800', 'hover:bg-amber-600'];
                                                 const btnColor = btnColors[colorIdx % 4];
 

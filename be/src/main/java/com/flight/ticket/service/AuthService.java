@@ -3,6 +3,7 @@ package com.flight.ticket.service;
 import com.flight.ticket.dto.AuthResponse;
 import com.flight.ticket.dto.LoginRequest;
 import com.flight.ticket.dto.RegisterRequest;
+import com.flight.ticket.dto.UserDto;
 import com.flight.ticket.model.NguoiDung;
 import com.flight.ticket.repository.UserRepository;
 import com.flight.ticket.security.JwtUtils;
@@ -54,7 +55,12 @@ public class AuthService {
         return AuthResponse.builder()
                 .message("Dang ky thanh cong. Vui long kiem tra email de xac thuc.")
                 .role(user.getVaitro())
-                .maNguoiDung(user.getMaNguoiDung())
+                .user(UserDto.builder()
+                        .maNguoiDung(user.getMaNguoiDung())
+                        .email(user.getEmail())
+                        .hoTen(user.getHoTen())
+                        .role(user.getVaitro())
+                        .build())
                 .build();
     }
 
@@ -79,7 +85,12 @@ public class AuthService {
                 .token(jwt)
                 .message("Dang nhap thanh cong")
                 .role(user.getVaitro())
-                .maNguoiDung(user.getMaNguoiDung())
+                .user(UserDto.builder()
+                        .maNguoiDung(user.getMaNguoiDung())
+                        .email(user.getEmail())
+                        .hoTen(user.getHoTen())
+                        .role(user.getVaitro())
+                        .build())
                 .build();
     }
 
@@ -97,7 +108,12 @@ public class AuthService {
         return AuthResponse.builder()
                 .message("Xac thuc email thanh cong")
                 .role(user.getVaitro())
-                .maNguoiDung(user.getMaNguoiDung())
+                .user(UserDto.builder()
+                        .maNguoiDung(user.getMaNguoiDung())
+                        .email(user.getEmail())
+                        .hoTen(user.getHoTen())
+                        .role(user.getVaitro())
+                        .build())
                 .build();
     }
 

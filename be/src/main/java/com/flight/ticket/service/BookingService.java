@@ -35,6 +35,16 @@ public class BookingService {
     @Autowired
     private KhuyenMaiRepository khuyenMaiRepository;
 
+    @Autowired
+    private ThanhToanRepository thanhToanRepository;
+
+    @Autowired
+    private PhuongThucThanhToanRepository phuongThucThanhToanRepository;
+
+    // MaPTTT = 4 tương ứng VNPAY trong bảng PHUONGTHUCTHANHTOAN
+    private static final int MA_PTTT_VNPAY = 4;
+    private static final int MA_PTTT_PAY_LATER = 6;
+
     @Transactional
     public DatVe bookTicket(BookingRequestDto request) {
         // 1. Generate PNR
@@ -97,16 +107,20 @@ public class BookingService {
             // In strict mode, throw exception. For now, we use calculated price.
         }
 
-        // 5. Create main booking record
+        // 5. Xác định trạng thái dựa theo phương thức thanh toán
+        boolean isVnpay = "VNPAY".equalsIgnoreCase(request.getPhuongThucThanhToan());
+        String bookingStatus = isVnpay ? "SUCCESS" : "PENDING";
+
+        // 6. Create main booking record
         DatVe datVe = DatVe.builder()
                 .maDatCho(pnr)
                 .maNguoiDung(nguoiDung)
                 .maKhuyenMai(khuyenMai)
                 .ngayDatVe(LocalDateTime.now())
                 .tongTien(finalTotalPrice)
-                .trangThai("PENDING")
+                .trangThai(bookingStatus)
                 .build();
-        
+
         datVe = datVeRepository.save(datVe);
 
         // Update Promotion Usage count
@@ -114,6 +128,19 @@ public class BookingService {
             khuyenMai.setSoLuongConLai(khuyenMai.getSoLuongConLai() - 1);
             khuyenMaiRepository.save(khuyenMai);
         }
+
+        // 7. Tạo bản ghi THANHTOAN
+        int maPttt = isVnpay ? MA_PTTT_VNPAY : MA_PTTT_PAY_LATER;
+        PhuongThucThanhToan pttt = phuongThucThanhToanRepository.findById(maPttt).orElse(null);
+        ThanhToan thanhToan = ThanhToan.builder()
+                .maDatVe(datVe)
+                .maPTTT(pttt)
+                .soTien(finalTotalPrice)
+                .thoiGianThanhToan(LocalDateTime.now())
+                .trangThai(isVnpay ? "SUCCESS" : "PENDING")
+                .build();
+        thanhToanRepository.save(thanhToan);
+        System.out.println("[DEBUG Booking] Created THANHTOAN record for DatVe=" + datVe.getMaDatVe() + ", status=" + thanhToan.getTrangThai());
 
         if (request.getPassengers() != null) {
             for (PassengerDto passenger : request.getPassengers()) {

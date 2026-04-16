@@ -17,4 +17,5 @@ public class BookingRequestDto {
     private String maKhuyenMai;
     private BigDecimal tongTien;
     private List<PassengerDto> passengers;
+    private String phuongThucThanhToan; // "VNPAY" | "PAY_LATER"
 }

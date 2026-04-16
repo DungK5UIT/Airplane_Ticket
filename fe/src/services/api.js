@@ -185,6 +185,41 @@ export const authService = {
             }
         });
         return response.data;
+    },
+
+    // Admin: Tạo chuyến bay mới (có validate QuyDinh)
+    createFlightAdmin: async (flightData) => {
+        const user = authService.getCurrentUser();
+        const response = await api.post('/api/flights/create', flightData, {
+            headers: { 'Authorization': `Bearer ${user.token}` }
+        });
+        return response.data;
+    },
+
+    // Admin: Cập nhật chuyến bay (có validate QuyDinh)
+    updateFlightAdmin: async (id, flightData) => {
+        const user = authService.getCurrentUser();
+        const response = await api.put(`/api/flights/${id}/update`, flightData, {
+            headers: { 'Authorization': `Bearer ${user.token}` }
+        });
+        return response.data;
+    },
+
+    // Master data APIs
+    getAllAirports: async () => {
+        const response = await api.get('/api/airports');
+        return response.data;
+    },
+
+    // Revenue / Report Services
+    getRevenue: async (year) => {
+        const response = await api.get(`/api/revenue?year=${year}`);
+        return response.data;
+    },
+
+    getRevenueYears: async () => {
+        const response = await api.get('/api/revenue/years');
+        return response.data;
     }
 };
 

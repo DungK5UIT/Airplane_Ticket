@@ -35,6 +35,9 @@ public class SecurityConfig {
                         .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/airports/**").permitAll()
                         .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/promotions/**").permitAll()
                         .requestMatchers("/api/tickets/**").permitAll()
+                        .requestMatchers("/api/quy-dinh/**").permitAll()
+                        .requestMatchers("/api/revenue/**").permitAll()
+                        .requestMatchers("/api/flights/create").permitAll()
                         .anyRequest().authenticated());
         
         http.addFilterBefore(jwtAuthFilter(), UsernamePasswordAuthenticationFilter.class);

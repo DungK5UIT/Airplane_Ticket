@@ -205,14 +205,14 @@ export default function FlightDetail() {
 
     const basePrice = ticketClassDetail ? ticketClassDetail.gia : (ticketClass === 'BUSINESS' ? (flight.giaThuongGia || flight.giaCoBan * 2.5) : (flight.giaPhoThong || flight.giaCoBan || 0));
     const totalTicketPrice = basePrice * totalPassengers;
-    const taxesAndFees = totalTicketPrice * 0.2;
+    // Giá từ DB đã bao gồm thuế và phí — không cộng thêm thuế tự sinh nữa
 
     const baggageOption = BAGGAGE_OPTIONS.find(o => o.id === selectedBaggage);
     const insuranceOption = INSURANCE_OPTIONS.find(o => o.id === selectedInsurance);
     const baggageTotal = (baggageOption?.price || 0) * totalPassengers;
     const insuranceTotal = (insuranceOption?.price || 0) * totalPassengers;
 
-    const finalTotal = totalTicketPrice + taxesAndFees + baggageTotal + insuranceTotal;
+    const finalTotal = totalTicketPrice + baggageTotal + insuranceTotal;
 
     const toggleSection = (section) => setExpandedSection(expandedSection === section ? null : section);
 

@@ -84,9 +84,8 @@ export default function Payment() {
     const totalPassengers = pax.adult + pax.child + pax.infant;
     const baggageTotal = (selectedBaggage?.price || 0) * totalPassengers;
     const insuranceTotal = (selectedInsurance?.price || 0) * totalPassengers;
-    const fareAndTaxes = totalPrice - baggageTotal - insuranceTotal;
-    const totalTicketPrice = fareAndTaxes / 1.2;
-    const taxesAndFees = fareAndTaxes - totalTicketPrice;
+    // Giá đã bao gồm tất cả phí — không chia 1.2 nữa
+    const totalTicketPrice = totalPrice - baggageTotal - insuranceTotal;
 
     // Call API helper
     const submitBooking = async (methodInfo) => {
@@ -96,6 +95,9 @@ export default function Payment() {
         try {
             // Data is already mapped in Orders.jsx to BookingRequestDto
             const finalData = { ...requestData };
+
+            // Truyền phương thức thanh toán để backend biết set trạng thái
+            finalData.phuongThucThanhToan = methodInfo; // 'VNPAY' hoặc 'PAY_LATER'
 
             // Ensure maNguoiDung is populated if the user is logged in
             if (!finalData.maNguoiDung && user) {
@@ -120,7 +122,8 @@ export default function Payment() {
                 setIsProcessing(false);
                 setIsVnpayModalOpen(false);
 
-                alert(`Đặt vé thành công!\nSố PNR: ${data.maDatCho || 'N/A'}\nTrạng thái: ${methodInfo === 'VNPAY' ? 'Đã thanh toán (Mô phỏng)' : 'Đang chờ thanh toán'}`);
+                const statusLabel = methodInfo === 'VNPAY' ? 'SUCCESS (Đã thanh toán)' : 'PENDING (Chờ thanh toán)';
+                alert(`✅ Đặt vé thành công!\nSố PNR: ${data.maDatCho || 'N/A'}\nTrạng thái: ${statusLabel}`);
                 navigate('/');
             }
         } catch (error) {
@@ -129,7 +132,6 @@ export default function Payment() {
 
             let errorMsg = 'Lỗi hệ thống hoặc không thể kết nối tới máy chủ.';
             if (error.response) {
-                // Backend returned an error response (400, 401, 500 etc)
                 errorMsg = typeof error.response.data === 'string' ? error.response.data : (error.response.data?.message || JSON.stringify(error.response.data));
             }
 

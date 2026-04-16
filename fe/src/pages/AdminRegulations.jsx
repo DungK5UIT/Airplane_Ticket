@@ -74,11 +74,9 @@ const AdminRegulations = () => {
                 </Link>
 
                 <nav className="flex flex-1 flex-col gap-2">
-                    <Link to="/admin/dashboard" className="flex items-center gap-2 rounded-lg px-4 py-3 text-slate-300 hover:bg-slate-800"><span>📊</span> Tổng quan</Link>
                     <Link to="/admin/dashboard" className="flex items-center gap-2 rounded-lg px-4 py-3 text-slate-300 hover:bg-slate-800"><span>✈️</span> Quản lý chuyến bay</Link>
                     <div className="flex items-center gap-2 rounded-lg bg-slate-700 px-4 py-3 font-semibold text-cyan-300"><span>⚖️</span> Thay đổi quy định</div>
-                    <div className="flex items-center gap-2 rounded-lg px-4 py-3 text-slate-300"><span>👤</span> Quản lý người dùng</div>
-                    <div className="flex items-center gap-2 rounded-lg px-4 py-3 text-slate-300"><span>🎫</span> Đơn đặt vé</div>
+                    <Link to="/admin/revenue" className="flex items-center gap-2 rounded-lg px-4 py-3 text-slate-300 hover:bg-slate-800 transition-colors"><span>📊</span> Báo cáo doanh thu</Link>
                 </nav>
 
                 <div className="mt-6 border-t border-slate-700 pt-5">

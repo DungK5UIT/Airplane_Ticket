@@ -9,6 +9,7 @@ import AdminAuth from './pages/AdminAuth';
 import Home from './pages/Home';
 import AdminDashboard from './pages/AdminDashboard';
 import AdminRegulations from './pages/AdminRegulations';
+import AdminRevenue from './pages/AdminRevenue';
 import Flight from './pages/Flight';
 import FlightDetail from './pages/FlightDetail';
 import Orders from './pages/Orders';
@@ -41,6 +42,7 @@ function App() {
         <Route path="/promotions" element={<Promotions />} />
         <Route path="/admin/dashboard" element={<AdminDashboard />} />
         <Route path="/admin/regulations" element={<AdminRegulations />} />
+        <Route path="/admin/revenue" element={<AdminRevenue />} />
       </Routes>
     </Router>
   );

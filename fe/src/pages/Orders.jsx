@@ -68,12 +68,10 @@ export default function Orders() {
     
     const totalPassengers = pax.adult + pax.child + pax.infant;
 
-    // Recalculate breakdown for display
+    // Recalculate breakdown for display — giá đã bao gồm tất cả phí, không chia 1.2 nữa
     const baggageTotal = (selectedBaggage?.price || 0) * totalPassengers;
     const insuranceTotal = (selectedInsurance?.price || 0) * totalPassengers;
-    const fareAndTaxes = totalPrice - baggageTotal - insuranceTotal;
-    const totalTicketPrice = fareAndTaxes / 1.2;
-    const taxesAndFees = fareAndTaxes - totalTicketPrice;
+    const totalTicketPrice = totalPrice - baggageTotal - insuranceTotal;
 
     const [contact, setContact] = useState({ name: '', email: '', phone: '' });
     const [promoCode, setPromoCode] = useState('');
@@ -83,15 +81,31 @@ export default function Orders() {
     const [activePromotions, setActivePromotions] = useState([]);
 
     React.useEffect(() => {
-        const fetchPromos = async () => {
+        const fetchData = async () => {
             try {
+                // Fetch Promos
                 const promos = await authService.getActivePromotions();
                 setActivePromotions(promos || []);
+
+                // Fetch User Profile for Contact Info
+                const userSession = authService.getCurrentUser();
+                const userId = userSession?.maNguoiDung || userSession?.user?.maNguoiDung || userSession?.user?.id || userSession?.id;
+                
+                if (userId) {
+                    const userData = await authService.getUserProfile(userId);
+                    if (userData) {
+                        setContact({
+                            name: userData.hoTen || '',
+                            email: userData.email || '',
+                            phone: userData.sdt || ''
+                        });
+                    }
+                }
             } catch (error) {
-                console.error("Failed to fetch promotions:", error);
+                console.error("Failed to fetch data:", error);
             }
         };
-        fetchPromos();
+        fetchData();
     }, []);
 
     const handleApplyPromo = () => {
@@ -216,7 +230,7 @@ export default function Orders() {
                     gioiTinh: p.gioiTinh === 'Nam' ? 'Nam' : 'Nữ',
                     doiTuong: p.type === 'adult' ? 'NGUOI_LON' : (p.type === 'child' ? 'TRE_EM' : 'EM_BE'),
                     soGhe: selectedSeats[i],
-                    giaVe: (finalPrice - ((selectedBaggage?.price || 0) + (selectedInsurance?.price || 0)) * passengers.length) / passengers.length, 
+                    giaVe: (finalPrice - baggageTotal - insuranceTotal) / passengers.length,
                     giaHanhLy: selectedBaggage?.price || 0,
                     canNangHanhLy: selectedBaggage?.weight || 0,
                     giaBaoHiem: selectedInsurance?.price || 0

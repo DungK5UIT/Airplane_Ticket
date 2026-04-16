@@ -21,6 +21,8 @@ public class BookingController {
         try {
             System.out.println("\n\n=== Nhận request đặt vé ===");
             System.out.println("Mã người dùng từ Frontend: " + request.getMaNguoiDung());
+            System.out.println("Phương thức thanh toán: " + request.getPhuongThucThanhToan());
+            System.out.println("Tổng tiền: " + request.getTongTien());
             System.out.println("===============================\n\n");
             DatVe datVe = bookingService.bookTicket(request);
             BookingResponseDto response = BookingResponseDto.builder()

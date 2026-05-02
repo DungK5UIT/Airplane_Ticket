@@ -30,9 +30,13 @@ public class FlightDto {
     private int thoiGianBay;
     private String trangThai;
     private Double giaCoBan;
+    private boolean isDirect;
     
     // Dynamic list of ticket classes
     private java.util.List<FlightClassDetailDto> chiTietHangVe;
+
+    // List of intermediate stops
+    private java.util.List<TrungGianDto> danhSachTrungGian;
 
     private int soLuongCho;
     private int soLuongChoConLai;

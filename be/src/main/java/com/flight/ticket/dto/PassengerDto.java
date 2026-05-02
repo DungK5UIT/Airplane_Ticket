@@ -11,7 +11,7 @@ import java.math.BigDecimal;
 @Builder
 public class PassengerDto {
     private int maChuyenBay;
-    private int maHangVe;
+    private Integer maHangVe;
     private String hoTenHK;
     private String cccd;
     private LocalDate ngaySinh;

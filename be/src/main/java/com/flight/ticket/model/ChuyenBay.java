@@ -46,4 +46,17 @@ public class ChuyenBay {
 
     @Column(name = "TrangThai")
     private String trangThai;
+
+    @OneToMany(mappedBy = "maChuyenBay", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
+    @Builder.Default
+    private java.util.List<TrungGian> danhSachTrungGian = new java.util.ArrayList<>();
+
+    @OneToMany(mappedBy = "chuyenBay", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
+    private java.util.List<CT_ChuyenBay> chiTietHangVe = new java.util.ArrayList<>();
+
+    public void addTrungGian(TrungGian tg) {
+        danhSachTrungGian.add(tg);
+        tg.setMaChuyenBay(this);
+    }
 }

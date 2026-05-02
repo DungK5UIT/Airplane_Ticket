@@ -8,7 +8,7 @@ import lombok.*;
 @AllArgsConstructor
 @Builder
 public class FlightClassDetailDto {
-    private int maHangVe;
+    private Integer maHangVe;
     private String tenHangVe;
     private double gia;
     private int soLuongCho;

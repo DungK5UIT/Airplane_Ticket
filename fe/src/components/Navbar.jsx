@@ -241,8 +241,30 @@ const Navbar = ({ transparent = false }) => {
 
     const solid = !transparent || scrolled;
     const profile = user?.user || user || {};
-    const isAdmin = (profile?.role || user?.role) === 'ADMIN';
+    const findRoleAggressively = (obj) => {
+        if (!obj) return "";
+        // First check standard fields
+        const standard = obj.role || obj.vaitro || obj.vaiTro || obj.VaiTro || "";
+        if (standard) return standard;
+        
+        // If not found, scan all string properties for ADMIN or USER
+        for (const key in obj) {
+            const val = obj[key];
+            if (typeof val === 'string') {
+                const upper = val.toUpperCase();
+                if (upper.includes('ADMIN') || upper.includes('USER')) return val;
+            }
+        }
+        return "";
+    };
 
+    const rawRole = findRoleAggressively(profile) || findRoleAggressively(user) || "";
+    const roleString = rawRole.toString().toUpperCase();
+    const isAdmin = roleString.includes('ADMIN');
+    const isEmployee = roleString.includes('USER') && !isAdmin;
+    
+    console.log("[NAVBAR DEBUG] Extracted Role:", roleString);
+    
     // --- Dynamic Styles ---
     const navBg = solid
         ? 'bg-white/80 backdrop-blur-xl shadow-[0_8px_32px_rgba(0,0,0,0.08)] border-b border-white/20'
@@ -255,8 +277,9 @@ const Navbar = ({ transparent = false }) => {
     const navLinks = [
         { name: 'Trang chủ', path: '/' },
         { name: 'Chuyến bay', path: '/flight' },
-        ...(user && !isAdmin ? [{ name: 'Chuyến bay của tôi', path: '/my-flights' }] : []),
+        ...(user && !isAdmin && !isEmployee ? [{ name: 'Chuyến bay của tôi', path: '/my-flights' }] : []),
         ...(user && isAdmin ? [{ name: 'Quản lý FlightTicket', path: '/admin/dashboard' }] : []),
+        ...(user && isEmployee ? [{ name: 'Nhân viên FlightTicket', path: '/employee/dashboard' }] : []),
         { name: 'Ưu đãi', path: '/promotions' },
         { name: 'Hỗ trợ', path: '/support' },
     ];

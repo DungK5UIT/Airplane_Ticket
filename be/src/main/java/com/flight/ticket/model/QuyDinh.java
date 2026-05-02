@@ -4,7 +4,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 @Entity
-@Table(name = "quy_dinh")
+@Table(name = "QUYDINH")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -16,15 +16,15 @@ public class QuyDinh {
 
     // QĐ1
     private Integer soLuongSanBay;
-    private Integer thoiGianBayToiThieu; // Phút
+    private Integer thoiGianBayToiThieu;
     private Integer soSanBayTrungGianToiDa;
-    private Integer thoiGianDungToiThieu; // Phút
-    private Integer thoiGianDungToiDa; // Phút
+    private Integer thoiGianDungToiThieu;
+    private Integer thoiGianDungToiDa;
 
     // QĐ2
     private Integer soLuongHangVe;
 
     // QĐ3
-    private Integer thoiGianChamNhatKhiDatVe; // Giờ
-    private Integer thoiGianHuyDatVe; // Giờ
+    private Integer thoiGianChamNhatKhiDatVe;
+    private Integer thoiGianHuyDatVe;
 }

@@ -19,16 +19,27 @@ public class AdminInitializer implements CommandLineRunner {
     @Override
     public void run(String... args) throws Exception {
         // Check if admin already exists
-        if (userRepository.findByEmail("admin@example.com").isEmpty()) {
-            NguoiDung admin = NguoiDung.builder()
-                    .email("admin@example.com")
-                    .matKhau(passwordEncoder.encode("admin123"))
-                    .hoTen("Admin User")
-                    .vaitro("ADMIN")
-                    .isVerified(true)
-                    .build();
-            userRepository.save(admin);
-            System.out.println("Admin user created successfully");
-        }
+        userRepository.findByEmail("admin@example.com").ifPresentOrElse(
+            admin -> {
+                if (!"ADMIN".equals(admin.getVaitro())) {
+                    admin.setVaitro("ADMIN");
+                    userRepository.save(admin);
+                    System.out.println("Admin user role updated to ADMIN");
+                }
+            },
+            () -> {
+                NguoiDung admin = NguoiDung.builder()
+                        .email("admin@example.com")
+                        .matKhau(passwordEncoder.encode("admin123"))
+                        .hoTen("Admin User")
+                        .vaitro("ADMIN")
+                        .isVerified(true)
+                        .build();
+                userRepository.save(admin);
+                System.out.println("Admin user created successfully");
+            }
+        );
+
+
     }
 }

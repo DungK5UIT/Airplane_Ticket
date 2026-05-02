@@ -16,4 +16,6 @@ public class UserRequestDto {
     private LocalDate ngaySinh;
     private String gioiTinh;
     private String cccd;
+    private String role;
+    private String password;
 }

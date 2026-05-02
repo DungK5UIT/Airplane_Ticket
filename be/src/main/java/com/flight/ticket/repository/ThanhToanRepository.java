@@ -11,6 +11,7 @@ import java.util.List;
 
 @Repository
 public interface ThanhToanRepository extends JpaRepository<ThanhToan, Integer> {
+    java.util.Optional<ThanhToan> findByMaDatVe(com.flight.ticket.model.DatVe maDatVe);
 
     // Tổng SoTien theo tháng/năm (tất cả trạng thái)
     @Query(value = "SELECT COALESCE(SUM(SoTien), 0) FROM THANHTOAN " +

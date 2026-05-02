@@ -10,6 +10,20 @@ const api = axios.create({
     },
 });
 
+// Add a request interceptor to include the JWT token
+api.interceptors.request.use(
+    (config) => {
+        const user = JSON.parse(localStorage.getItem(STORAGE_KEY));
+        if (user && user.token) {
+            config.headers['Authorization'] = `Bearer ${user.token}`;
+        }
+        return config;
+    },
+    (error) => {
+        return Promise.reject(error);
+    }
+);
+
 const normalizeAuthResponse = (payload) => {
     const token = payload?.token ?? payload?.accessToken ?? payload?.access_token ?? null;
     let user = payload?.user ?? null;
@@ -41,7 +55,7 @@ export const authService = {
         return normalizedData;
     },
 
-    register: async (name, email, password, role = 'USER') => {
+    register: async (name, email, password, role = 'CLIENT') => {
         const response = await api.post('/api/auth/register', { name, email, password, role });
         return response.data;
     },
@@ -99,6 +113,46 @@ export const authService = {
         return response.data;
     },
 
+    getAllUsers: async () => {
+        const user = authService.getCurrentUser();
+        const response = await api.get(`/api/users`, {
+            headers: {
+                'Authorization': `Bearer ${user?.token}`
+            }
+        });
+        return response.data;
+    },
+
+    createUserAdmin: async (userData) => {
+        const user = authService.getCurrentUser();
+        const response = await api.post(`/api/users`, userData, {
+            headers: {
+                'Authorization': `Bearer ${user?.token}`
+            }
+        });
+        return response.data;
+    },
+
+    updateUserAdmin: async (userId, userData) => {
+        const user = authService.getCurrentUser();
+        const response = await api.put(`/api/users/admin/${userId}`, userData, {
+            headers: {
+                'Authorization': `Bearer ${user?.token}`
+            }
+        });
+        return response.data;
+    },
+
+    deleteUserAdmin: async (userId) => {
+        const user = authService.getCurrentUser();
+        const response = await api.delete(`/api/users/${userId}`, {
+            headers: {
+                'Authorization': `Bearer ${user?.token}`
+            }
+        });
+        return response.data;
+    },
+
     getUserBookings: async (userId) => {
         const user = authService.getCurrentUser();
         const response = await api.get(`/api/bookings/user/${userId}`, {
@@ -118,9 +172,9 @@ export const authService = {
         return response.data;
     },
 
-    searchFlights: async (origin, destination) => {
+    searchFlights: async (origin, destination, date, airlineId) => {
         const response = await api.get('/api/flights/search', {
-            params: { origin, destination }
+            params: { origin, destination, date, airlineId }
         });
         return response.data;
     },
@@ -210,6 +264,45 @@ export const authService = {
         const response = await api.get('/api/airports');
         return response.data;
     },
+    getAllAirlines: async () => {
+        const response = await api.get('/api/airlines');
+        return response.data;
+    },
+    getAllAirplanes: async () => {
+        const response = await api.get('/api/airplanes');
+        return response.data;
+    },
+    getAllHangVe: async () => {
+        const response = await api.get('/api/hangve');
+        return response.data;
+    },
+    addHangVe: async (data) => {
+        const response = await api.post('/api/hangve', data);
+        return response.data;
+    },
+    updateHangVe: async (id, data) => {
+        const response = await api.put(`/api/hangve/${id}`, data);
+        return response.data;
+    },
+    deleteHangVe: async (id) => {
+        const response = await api.delete(`/api/hangve/${id}`);
+        return response.data;
+    },
+
+    addAirport: async (airportData) => {
+        const response = await api.post('/api/airports', airportData);
+        return response.data;
+    },
+
+    updateAirport: async (id, airportData) => {
+        const response = await api.put(`/api/airports/${id}`, airportData);
+        return response.data;
+    },
+
+    deleteAirport: async (id) => {
+        const response = await api.delete(`/api/airports/${id}`);
+        return response.data;
+    },
 
     // Revenue / Report Services
     getRevenue: async (year) => {
@@ -219,6 +312,17 @@ export const authService = {
 
     getRevenueYears: async () => {
         const response = await api.get('/api/revenue/years');
+        return response.data;
+    },
+
+    // Check-in Services
+    getBookingByPNR: async (pnr) => {
+        const response = await api.get(`/api/bookings/pnr/${pnr}`);
+        return response.data;
+    },
+
+    updateCheckinStatus: async (bookingId, status) => {
+        const response = await api.put(`/api/bookings/${bookingId}/checkin`, { status });
         return response.data;
     }
 };

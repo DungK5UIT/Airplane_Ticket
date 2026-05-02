@@ -30,18 +30,19 @@ public class AuthService {
     private EmailService emailService;
 
     public AuthResponse register(RegisterRequest request) {
-        if (userRepository.findByEmail(request.getEmail()).isPresent()) {
-            throw new RuntimeException("Email da duoc su dung");
+        String trimmedEmail = request.getEmail() != null ? request.getEmail().trim() : "";
+        if (userRepository.findByEmail(trimmedEmail).isPresent()) {
+            throw new RuntimeException("Email đã được sử dụng");
         }
 
         NguoiDung user = new NguoiDung();
         user.setHoTen(request.getName());
-        user.setEmail(request.getEmail());
+        user.setEmail(trimmedEmail);
         user.setMatKhau(passwordEncoder.encode(request.getPassword()));
         user.setVaitro(
                 request.getRole() != null && !request.getRole().isBlank()
                         ? request.getRole().toUpperCase()
-                        : "USER"
+                        : "CLIENT"
         );
         user.setVerified(false);
 
@@ -53,7 +54,7 @@ public class AuthService {
         emailService.sendVerificationEmail(user.getEmail(), verificationCode);
 
         return AuthResponse.builder()
-                .message("Dang ky thanh cong. Vui long kiem tra email de xac thuc.")
+                .message("Đăng ký thành công. Vui lòng kiểm tra email để xác thực.")
                 .role(user.getVaitro())
                 .user(UserDto.builder()
                         .maNguoiDung(user.getMaNguoiDung())
@@ -65,25 +66,33 @@ public class AuthService {
     }
 
     public AuthResponse login(LoginRequest request) {
-        Optional<NguoiDung> userOpt = userRepository.findByEmail(request.getEmail());
-
+        String email = request.getEmail() != null ? request.getEmail().trim() : "";
+        System.out.println("[LOGIN DEBUG] Attempting login for email: " + email);
+        Optional<NguoiDung> userOpt = userRepository.findByEmail(email);
         if (userOpt.isEmpty()) {
-            throw new RuntimeException("Email hoac mat khau khong dung");
+            System.out.println("[LOGIN DEBUG] User NOT found for email: " + email);
+            System.out.println("[LOGIN DEBUG] Current emails in DB: " + 
+                userRepository.findAll().stream().map(u -> "'" + u.getEmail() + "'").collect(java.util.stream.Collectors.joining(", ")));
+            throw new RuntimeException("Email hoặc mật khẩu không đúng");
         }
 
         NguoiDung user = userOpt.get();
-        if (!passwordEncoder.matches(request.getPassword(), user.getMatKhau())) {
-            throw new RuntimeException("Email hoac mat khau khong dung");
+        boolean passwordMatch = passwordEncoder.matches(request.getPassword(), user.getMatKhau());
+        System.out.println("[LOGIN DEBUG] Password match result: " + passwordMatch);
+
+        if (!passwordMatch) {
+            throw new RuntimeException("Email hoặc mật khẩu không đúng");
         }
 
+        System.out.println("[LOGIN DEBUG] User verified status: " + user.isVerified());
         if (!user.isVerified()) {
-            throw new RuntimeException("Vui long xac thuc email truoc khi dang nhap");
+            throw new RuntimeException("Vui lòng xác thực email trước khi đăng nhập");
         }
 
         String jwt = jwtUtils.generateToken(user.getEmail());
         return AuthResponse.builder()
                 .token(jwt)
-                .message("Dang nhap thanh cong")
+                .message("Đăng nhập thành công")
                 .role(user.getVaitro())
                 .user(UserDto.builder()
                         .maNguoiDung(user.getMaNguoiDung())
@@ -97,7 +106,7 @@ public class AuthService {
     public AuthResponse verifyEmail(String code) {
         Optional<NguoiDung> userOpt = userRepository.findByVerificationCode(code);
         if (userOpt.isEmpty()) {
-            throw new RuntimeException("Ma xac thuc khong hop le");
+            throw new RuntimeException("Mã xác thực không hợp lệ");
         }
 
         NguoiDung user = userOpt.get();
@@ -106,7 +115,7 @@ public class AuthService {
         userRepository.save(user);
 
         return AuthResponse.builder()
-                .message("Xac thuc email thanh cong")
+                .message("Xác thực email thành công")
                 .role(user.getVaitro())
                 .user(UserDto.builder()
                         .maNguoiDung(user.getMaNguoiDung())
@@ -119,7 +128,7 @@ public class AuthService {
 
     public AuthResponse forgotPassword(String email) {
         if (email == null || email.isBlank()) {
-            throw new RuntimeException("Email khong duoc de trong");
+            throw new RuntimeException("Email không được để trống");
         }
         Optional<NguoiDung> userOpt = userRepository.findByEmail(email);
         if (userOpt.isPresent()) {
@@ -136,7 +145,7 @@ public class AuthService {
             emailService.sendPasswordResetEmail(user.getEmail(), newPassword);
         }
         return AuthResponse.builder()
-                .message("Neu email ton tai, he thong da gui mat khau moi den email cua ban.")
+                .message("Nếu email tồn tại, hệ thống đã gửi mật khẩu mới đến email của bạn.")
                 .build();
     }
 }

@@ -20,4 +20,19 @@ public class AirportController {
     public List<AirportDto> getAllAirports() {
         return airportService.getAllAirports();
     }
+
+    @PostMapping
+    public AirportDto addAirport(@RequestBody AirportDto airportDto) {
+        return airportService.addAirport(airportDto);
+    }
+
+    @PutMapping("/{id}")
+    public AirportDto updateAirport(@PathVariable int id, @RequestBody AirportDto airportDto) {
+        return airportService.updateAirport(id, airportDto);
+    }
+
+    @DeleteMapping("/{id}")
+    public void deleteAirport(@PathVariable int id) {
+        airportService.deleteAirport(id);
+    }
 }

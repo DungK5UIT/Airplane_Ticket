@@ -25,6 +25,15 @@ public class QuyDinhService {
     }
 
     public QuyDinh updateQuyDinh(QuyDinh newQuyDinh) {
+        // Validation logic for updating regulations
+        if (newQuyDinh.getThoiGianDungToiThieu() > newQuyDinh.getThoiGianDungToiDa()) {
+            throw new RuntimeException("Thời gian dừng tối thiểu không được lớn hơn thời gian dừng tối đa.");
+        }
+        if (newQuyDinh.getSoLuongSanBay() < 0 || newQuyDinh.getThoiGianBayToiThieu() < 0 || 
+            newQuyDinh.getSoSanBayTrungGianToiDa() < 0 || newQuyDinh.getSoLuongHangVe() < 0) {
+            throw new RuntimeException("Các giá trị quy định không được là số âm.");
+        }
+
         QuyDinh current = getQuyDinh();
         if (current.getId() != null) {
             newQuyDinh.setId(current.getId());

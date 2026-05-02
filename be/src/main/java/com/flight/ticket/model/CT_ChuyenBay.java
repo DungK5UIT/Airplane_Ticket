@@ -43,8 +43,7 @@ public class CT_ChuyenBay {
     @AllArgsConstructor
     @EqualsAndHashCode // 🔥 BẮT BUỘC để tránh warning
     public static class CT_ChuyenBayId implements Serializable {
-
         private int maChuyenBay;
-        private int maHangVe;
+        private Integer maHangVe;
     }
 }

@@ -5,14 +5,10 @@ import { authService } from '../services/api';
 // --- Các hàm Helper ---
 const formatVietjetPrice = (value) => {
     if (value == null || Number.isNaN(Number(value))) return { main: '—', sub: '' };
-    const strValue = Number(value).toLocaleString('vi-VN');
-    if (strValue.endsWith('.000')) {
-        return {
-            main: strValue.slice(0, -4),
-            sub: '000 VND'
-        };
-    }
-    return { main: strValue, sub: 'VND' };
+    const num = Math.floor(Number(value));
+    const mainPart = Math.floor(num / 1000).toLocaleString('vi-VN');
+    const subPart = (num % 1000).toString().padStart(3, '0');
+    return { main: mainPart, sub: `.${subPart} VND` };
 };
 
 const formatTimeOnly = (value) => {
@@ -227,7 +223,11 @@ const FlightList = ({
                                                     <span className="text-4xl font-black text-slate-900">{formatTimeOnly(f.ngayGioHaCanh)}</span>
                                                 </div>
                                                 <div className="text-sm text-slate-600 mb-4">
-                                                    Máy bay thương mại - <span className="font-bold text-sky-700">Bay thẳng</span>
+                                                    Máy bay thương mại - <span className="font-bold text-sky-700">
+                                                        {f.danhSachTrungGian && f.danhSachTrungGian.length > 0 
+                                                            ? `${f.danhSachTrungGian.length} điểm dừng` 
+                                                            : 'Bay thẳng'}
+                                                    </span>
                                                 </div>
 
                                                 {/* Nút mũi tên xổ xuống cho Lịch trình */}
@@ -267,8 +267,8 @@ const FlightList = ({
                                                         {isSoldOut ? <SoldOutBox /> : (
                                                             <>
                                                                 <div className="text-center pt-8 pb-4 w-full h-full flex flex-col items-center justify-center group">
-                                                                    <div className="text-2xl lg:text-3xl font-black text-gray-800">{formatVietjetPrice(hv.gia).main}</div>
-                                                                    <div className="text-xs lg:text-sm font-bold text-gray-500 italic mt-1 mb-3">{formatVietjetPrice(hv.gia).sub}</div>
+                                                                    <div className="text-2xl lg:text-3xl font-black text-gray-800 leading-tight">{formatVietjetPrice(hv.gia).main}</div>
+                                                                    <div className="text-xs lg:text-sm font-bold text-gray-400 italic mb-3 leading-tight">{formatVietjetPrice(hv.gia).sub}</div>
                                                                     <button
                                                                         onClick={() => {
                                                                             if (!authService.getCurrentUser()) {
@@ -328,8 +328,28 @@ const FlightList = ({
                                                                 </div>
                                                             </div>
 
+                                                            {/* Điểm trung gian (nếu có) */}
+                                                            {f.danhSachTrungGian && f.danhSachTrungGian.length > 0 && f.danhSachTrungGian.map((tg, i) => {
+                                                                const tgName = tg.sanBay?.thanhPho || tg.sanBay?.tenSanBay || tg.maSanBayTG?.thanhPho || tg.maSanBayTG?.tenSanBay || `Sân bay ID: ${tg.maSanBayTG || '?'}`;
+                                                                return (
+                                                                    <div key={i} className="relative mt-2">
+                                                                        <div className="absolute -left-[30px] top-1 bg-slate-50 rounded-full p-0.5">
+                                                                            <div className="w-3 h-3 rounded-full border-2 border-orange-400 bg-slate-50"></div>
+                                                                        </div>
+                                                                        <div className="flex">
+                                                                            <div className="w-24 text-slate-800 text-base">Trạm dừng:</div>
+                                                                            <div>
+                                                                                <div className="text-black font-medium text-base mb-1">Dừng {tg.thoiGianDung} phút</div>
+                                                                                <div className="text-black text-base">{tgName}</div>
+                                                                                {tg.ghiChu && <div className="text-gray-500 text-sm mt-0.5">{tg.ghiChu}</div>}
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                );
+                                                            })}
+
                                                             {/* Điểm đến */}
-                                                            <div className="relative">
+                                                            <div className="relative mt-2">
                                                                 <div className="absolute -left-[30px] top-1 bg-slate-50 rounded-full p-0.5">
                                                                     <div className="w-3 h-3 rounded-full bg-green-500"></div>
                                                                 </div>

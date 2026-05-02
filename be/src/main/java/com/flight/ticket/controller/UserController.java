@@ -8,6 +8,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
+
 @RestController
 @RequestMapping("/api/users")
 @CrossOrigin(origins = "*")
@@ -33,6 +36,31 @@ public class UserController {
         try {
             userService.changePassword(userId, request);
             return ResponseEntity.ok().body("Đổi mật khẩu thành công");
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    @GetMapping
+    public ResponseEntity<List<UserDto>> getAllUsers() {
+        return ResponseEntity.ok(userService.getAllUsers());
+    }
+
+    @PostMapping
+    public ResponseEntity<UserDto> createUser(@RequestBody UserRequestDto request) {
+        return ResponseEntity.ok(userService.createUser(request));
+    }
+
+    @PutMapping("/admin/{userId}")
+    public ResponseEntity<UserDto> updateUserByAdmin(@PathVariable int userId, @RequestBody UserRequestDto request) {
+        return ResponseEntity.ok(userService.updateUser(userId, request));
+    }
+
+    @DeleteMapping("/{userId}")
+    public ResponseEntity<?> deleteUser(@PathVariable int userId) {
+        try {
+            userService.deleteUser(userId);
+            return ResponseEntity.ok().body("Xóa người dùng thành công");
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }

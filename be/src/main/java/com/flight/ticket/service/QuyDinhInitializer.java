@@ -16,12 +16,12 @@ public class QuyDinhInitializer implements CommandLineRunner {
     public void run(String... args) throws Exception {
         if (quyDinhRepository.count() == 0) {
             quyDinhRepository.save(QuyDinh.builder()
-                    .soLuongSanBay(5)
+                    .soLuongSanBay(20)
                     .thoiGianBayToiThieu(30)
                     .soSanBayTrungGianToiDa(2)
-                    .thoiGianDungToiThieu(20)
+                    .thoiGianDungToiThieu(30)
                     .thoiGianDungToiDa(60)
-                    .soLuongHangVe(2)
+                    .soLuongHangVe(5)
                     .thoiGianChamNhatKhiDatVe(24)
                     .thoiGianHuyDatVe(24)
                     .build());

@@ -48,7 +48,15 @@ public class NguoiDung {
     private String gioiTinh;
 
     @Column(name = "IsVerified")
-    private boolean isVerified = false;
+    private Boolean isVerified = false;
+
+    public boolean isVerified() {
+        return isVerified != null && isVerified;
+    }
+
+    public void setVerified(boolean verified) {
+        this.isVerified = verified;
+    }
 
     @Column(name = "VerificationCode")
     private String verificationCode;

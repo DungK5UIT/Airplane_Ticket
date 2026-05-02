@@ -13,8 +13,9 @@ import lombok.*;
 
 public class HangVe {
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "MaHangVe")
-    private int maHangVe;
+    private Integer maHangVe;
 
     @Column(name = "TenHangVe")
     private String tenHangVe;

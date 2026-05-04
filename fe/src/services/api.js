@@ -324,6 +324,11 @@ export const authService = {
     updateCheckinStatus: async (bookingId, status) => {
         const response = await api.put(`/api/bookings/${bookingId}/checkin`, { status });
         return response.data;
+    },
+
+    createVnpayPayment: async (amount, bookingId) => {
+        const response = await api.post('/api/payment/vnpay', { amount, bookingId });
+        return response.data;
     }
 };
 

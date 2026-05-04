@@ -333,3 +333,6 @@ INSERT INTO CT_DATVE (MaDatVe, MaChuyenBay, MaHangVe, HoTenHK, CCCD, NgaySinh, G
 (48, 1, 2, 'Nguyễn Hoàng Đức', '079090323250', '1998-01-11', 'Nam', 'Người lớn', '07C', 1620000.00, 0, 20),
 (49, 2, 2, 'Đỗ Hùng Dũng', '079090323251', '1993-09-08', 'Nam', 'Người lớn', '08A', 1800000.00, 0, 20),
 (50, 2, 2, 'Đinh Thị Khánh Ly', '043435457684', '2005-01-07', 'Nữ', 'Người lớn', '12B', 1530000.00, 0, 20);
+
+SELECT*FROM NGUOIDUNG;
+DELETE FROM NGUOIDUNG WHERE MaNguoiDung=57;

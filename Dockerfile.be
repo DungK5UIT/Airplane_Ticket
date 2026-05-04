@@ -7,6 +7,7 @@ RUN mvn clean package -DskipTests
 
 # Stage 2: Run the application
 FROM eclipse-temurin:17-jre-alpine
+RUN apk add --no-cache ttf-dejavu
 WORKDIR /app
 # Copy the built jar from the build stage
 COPY --from=build /app/target/*.jar app.jar

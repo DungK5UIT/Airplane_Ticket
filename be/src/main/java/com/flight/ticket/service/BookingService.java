@@ -14,6 +14,7 @@ import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import com.flight.ticket.dto.MyBookingDto;
+import com.flight.ticket.dto.CheckinResponseDto;
 
 @Service
 public class BookingService {
@@ -305,5 +306,58 @@ public class BookingService {
                 .thoiGianDen(t.getMaChuyenBay() != null ? t.getMaChuyenBay().getNgayGioHaCanh() : null)
                 .build()).collect(Collectors.toList());
 
+    }
+
+    @Transactional(readOnly = true)
+    public CheckinResponseDto getBookingByPNR(String pnr) {
+        DatVe datVe = datVeRepository.findByMaDatCho(pnr)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy mã đặt chỗ: " + pnr));
+
+        List<CT_DatVe> tickets = ctDatVeRepository.findByMaDatVe(datVe);
+        if (tickets.isEmpty()) {
+            throw new RuntimeException("Không tìm thấy thông tin hành khách cho mã đặt chỗ này.");
+        }
+
+        // Giả sử 1 booking (PNR) chỉ cho 1 chuyến bay (hoặc lấy chuyến bay đầu tiên)
+        ChuyenBay flight = tickets.get(0).getMaChuyenBay();
+
+        CheckinResponseDto.FlightInfoDto flightInfo = CheckinResponseDto.FlightInfoDto.builder()
+                .maChuyenBay(flight != null ? String.valueOf(flight.getMaChuyenBay()) : "N/A")
+                .ngayGioKhoiHanh(flight != null ? flight.getNgayGioKhoiHanh() : null)
+                .maSanBayDi(flight != null && flight.getMaSanBayDi() != null ? 
+                        CheckinResponseDto.AirportDto.builder()
+                                .maIATA(flight.getMaSanBayDi().getMaIATA())
+                                .thanhPho(flight.getMaSanBayDi().getThanhPho())
+                                .build() : null)
+                .maSanBayDen(flight != null && flight.getMaSanBayDen() != null ? 
+                        CheckinResponseDto.AirportDto.builder()
+                                .maIATA(flight.getMaSanBayDen().getMaIATA())
+                                .thanhPho(flight.getMaSanBayDen().getThanhPho())
+                                .build() : null)
+                .build();
+
+        List<CheckinResponseDto.PassengerInfoDto> passengers = tickets.stream().map(t -> 
+                CheckinResponseDto.PassengerInfoDto.builder()
+                        .maVe(t.getMaVe())
+                        .hoTenHK(t.getHoTenHK())
+                        .cccd(t.getCccd())
+                        .doiTuong(t.getDoiTuong())
+                        .soGhe(t.getSoGhe())
+                        .trangThai(t.getTrangThai())
+                        .build()
+        ).collect(Collectors.toList());
+
+        return CheckinResponseDto.builder()
+                .flight(flightInfo)
+                .passengers(passengers)
+                .build();
+    }
+
+    @Transactional
+    public void updateCheckinStatus(int ticketId, String status) {
+        CT_DatVe ticket = ctDatVeRepository.findById(ticketId)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy vé mã: " + ticketId));
+        ticket.setTrangThai(status);
+        ctDatVeRepository.save(ticket);
     }
 }

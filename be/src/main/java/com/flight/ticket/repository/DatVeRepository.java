@@ -11,6 +11,7 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface DatVeRepository extends JpaRepository<DatVe, Integer> {
     List<DatVe> findByMaNguoiDung(NguoiDung maNguoiDung);
+    java.util.Optional<DatVe> findByMaDatCho(String maDatCho);
     List<DatVe> findByTrangThaiAndNgayDatVeBefore(String trangThai, java.time.LocalDateTime dateTime);
 
     // Đếm số đơn theo tháng/năm

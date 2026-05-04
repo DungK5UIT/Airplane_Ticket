@@ -36,16 +36,56 @@ public class TicketPdfService {
         document.open();
 
         // --- FONTS (Support Vietnamese Unicode) ---
-        BaseFont baseFont;
-        BaseFont baseFontBold;
-        try {
-            // Loading Arial from Windows Fonts folder
-            baseFont = BaseFont.createFont("C:\\Windows\\Fonts\\arial.ttf", BaseFont.IDENTITY_H, BaseFont.EMBEDDED);
-            baseFontBold = BaseFont.createFont("C:\\Windows\\Fonts\\arialbd.ttf", BaseFont.IDENTITY_H, BaseFont.EMBEDDED);
-        } catch (Exception e) {
-            // Fallback to Helvetica if Arial is not found
-            baseFont = BaseFont.createFont(BaseFont.HELVETICA, BaseFont.CP1252, BaseFont.NOT_EMBEDDED);
-            baseFontBold = BaseFont.createFont(BaseFont.HELVETICA_BOLD, BaseFont.CP1252, BaseFont.NOT_EMBEDDED);
+        BaseFont baseFont = null;
+        BaseFont baseFontBold = null;
+        
+        String[] fontPaths = {
+            "C:\\Windows\\Fonts\\arial.ttf", // Windows
+            "C:\\Windows\\Fonts\\arialbd.ttf", // Windows Bold
+            "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", // Linux (Ubuntu/Debian)
+            "/usr/share/fonts/dejavu/DejaVuSans.ttf", // Linux (Alpine/CentOS)
+            "/usr/share/fonts/liberation/LiberationSans-Regular.ttf", // Linux
+            "/usr/share/fonts/TTF/Arial.TTF" // Other Linux
+        };
+
+        String[] fontBoldPaths = {
+            "C:\\Windows\\Fonts\\arialbd.ttf",
+            "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
+            "/usr/share/fonts/dejavu/DejaVuSans-Bold.ttf",
+            "/usr/share/fonts/liberation/LiberationSans-Bold.ttf",
+            "/usr/share/fonts/TTF/ArialBD.TTF"
+        };
+
+        // Try to load regular font
+        for (String path : fontPaths) {
+            try {
+                baseFont = BaseFont.createFont(path, BaseFont.IDENTITY_H, BaseFont.EMBEDDED);
+                if (baseFont != null) break;
+            } catch (Exception ignored) {}
+        }
+
+        // Try to load bold font
+        for (String path : fontBoldPaths) {
+            try {
+                baseFontBold = BaseFont.createFont(path, BaseFont.IDENTITY_H, BaseFont.EMBEDDED);
+                if (baseFontBold != null) break;
+            } catch (Exception ignored) {}
+        }
+
+        // Fallback if no system fonts found
+        if (baseFont == null) {
+            try {
+                baseFont = BaseFont.createFont(BaseFont.HELVETICA, BaseFont.CP1252, BaseFont.NOT_EMBEDDED);
+            } catch (Exception e) {
+                throw new IOException("Could not load any font for PDF generation", e);
+            }
+        }
+        if (baseFontBold == null) {
+            try {
+                baseFontBold = BaseFont.createFont(BaseFont.HELVETICA_BOLD, BaseFont.CP1252, BaseFont.NOT_EMBEDDED);
+            } catch (Exception e) {
+                baseFontBold = baseFont; // Last resort
+            }
         }
 
         Font fontTitle = new Font(baseFontBold, 22, Font.NORMAL, PRIMARY_COLOR);
@@ -109,10 +149,10 @@ public class TicketPdfService {
         mainCard.setSpacingBefore(10);
 
         // Header of Card
-        PdfPCell cardHeader = new PdfPCell(new Phrase("THÔNG TIN CHUYẾN BAY", fontWhite));
+        PdfPCell cardHeader = new PdfPCell(new Phrase("THÔNG TIN CHI TIẾT TICKET", fontWhite));
         cardHeader.setBackgroundColor(PRIMARY_COLOR);
         cardHeader.setColspan(2);
-        cardHeader.setPadding(8);
+        cardHeader.setPadding(10);
         cardHeader.setBorder(Rectangle.NO_BORDER);
         mainCard.addCell(cardHeader);
 
@@ -120,24 +160,30 @@ public class TicketPdfService {
         addPremiumCell(mainCard, "Số hiệu chuyến bay", cb != null ? "VN-" + cb.getMaChuyenBay() : "N/A", fontLabel, fontValue);
         addPremiumCell(mainCard, "Ngày khởi hành", cb != null ? cb.getNgayGioKhoiHanh().format(DATE_FORMAT) : "N/A", fontLabel, fontValue);
 
-        // Row 2: Time & Gate
+        // Row 2: Time & Seat
         addPremiumCell(mainCard, "Giờ lên máy bay", cb != null ? cb.getNgayGioKhoiHanh().format(TIME_FORMAT) : "N/A", fontLabel, fontValue);
-        addPremiumCell(mainCard, "Cửa", "GATE 01", fontLabel, fontValue);
+        addPremiumCell(mainCard, "Số ghế (Seat)", ve.getSoGhe() != null ? ve.getSoGhe() : "CHỜ XẾP", fontLabel, fontValue);
 
-        // Row 3: Seat & Class
-        addPremiumCell(mainCard, "Số ghế", ve.getSoGhe() != null ? ve.getSoGhe() : "CHỜ XẾP", fontLabel, fontValue);
-        addPremiumCell(mainCard, "Hạng vé", ve.getMaHangVe() != null ? ve.getMaHangVe().getTenHangVe() : "N/A", fontLabel, fontValue);
+        // Row 3: Class & Passenger Name
+        addPremiumCell(mainCard, "Hạng vé (Class)", ve.getMaHangVe() != null ? ve.getMaHangVe().getTenHangVe() : "N/A", fontLabel, fontValue);
+        addPremiumCell(mainCard, "Hành khách", ve.getHoTenHK(), fontLabel, fontValue);
 
-        // Row 4: Passenger Name & ID
-        addPremiumCell(mainCard, "Họ tên hành khách", ve.getHoTenHK(), fontLabel, fontValue);
-        addPremiumCell(mainCard, "CCCD / Hộ chiếu", ve.getCccd(), fontLabel, fontValue);
+        // Row 4: ID
+        PdfPCell idFullCell = new PdfPCell();
+        idFullCell.setColspan(2);
+        idFullCell.setPadding(10);
+        idFullCell.setBorderColor(Color.LIGHT_GRAY);
+        Paragraph pid = new Paragraph("CCCD / HỘ CHIẾU (IDENTIFICATION)\n", fontLabel);
+        pid.add(new Chunk(ve.getCccd(), fontValue));
+        idFullCell.addElement(pid);
+        mainCard.addCell(idFullCell);
 
         document.add(mainCard);
 
         // --- PRICING SECTION ---
         document.add(new Paragraph("\n"));
         PdfPTable priceTable = new PdfPTable(1);
-        priceTable.setWidthPercentage(40);
+        priceTable.setWidthPercentage(45);
         priceTable.setHorizontalAlignment(Element.ALIGN_RIGHT);
 
         NumberFormat vnFormat = NumberFormat.getCurrencyInstance(new Locale("vi", "VN"));
@@ -145,25 +191,35 @@ public class TicketPdfService {
         
         PdfPCell priceCell = new PdfPCell();
         priceCell.setBackgroundColor(SECONDARY_COLOR);
-        priceCell.setPadding(10);
-        Paragraph p = new Paragraph("TỔNG TIỀN\n", fontLabel);
-        p.add(new Chunk(vnFormat.format(ve.getGiaVe() != null ? ve.getGiaVe() : BigDecimal.ZERO), fontTitle));
-        priceCell.addElement(p);
+        priceCell.setPadding(15);
+        priceCell.setBorderColor(PRIMARY_COLOR);
+        priceCell.setBorderWidth(1f);
+        
+        Paragraph pTitle = new Paragraph("TỔNG TIỀN THANH TOÁN", fontLabel);
+        pTitle.setAlignment(Element.ALIGN_RIGHT);
+        pTitle.setSpacingAfter(5);
+        priceCell.addElement(pTitle);
+        
+        Paragraph pAmount = new Paragraph(vnFormat.format(ve.getGiaVe() != null ? ve.getGiaVe() : BigDecimal.ZERO), fontTitle);
+        pAmount.setAlignment(Element.ALIGN_RIGHT);
+        priceCell.addElement(pAmount);
+        
         priceTable.addCell(priceCell);
         
         document.add(priceTable);
 
         // --- FOOTER / TERMS ---
-        document.add(new Paragraph("\n\n\n"));
+        document.add(new Paragraph("\n\n"));
         LineSeparator ls = new LineSeparator();
         ls.setLineColor(Color.LIGHT_GRAY);
         document.add(ls);
         
-        Paragraph footer = new Paragraph("Lưu ý quan trọng:\n", fontLabel);
-        footer.add(new Chunk("- Vui lòng có mặt tại sân bay 2 tiếng trước giờ khởi hành.\n", fontTiny));
-        footer.add(new Chunk("- Mang theo vé này và CCCD/Hộ chiếu để làm thủ tục.\n", fontTiny));
-        footer.add(new Chunk("- Cửa ra máy bay sẽ đóng 20 phút trước giờ khởi hành.\n", fontTiny));
-        footer.add(new Chunk("- Cảm ơn quý khách đã lựa chọn FlyViet Airlines!", fontTiny));
+        Paragraph footer = new Paragraph("Lưu ý quan trọng (Important Notes):\n", fontLabel);
+        footer.setSpacingBefore(10);
+        footer.add(new Chunk("- Vui lòng có mặt tại quầy thủ tục ít nhất 120 phút trước giờ bay.\n", fontTiny));
+        footer.add(new Chunk("- Mang theo vé điện tử này (bản in hoặc điện thoại) và giấy tờ tùy thân hợp lệ.\n", fontTiny));
+        footer.add(new Chunk("- Cửa ra máy bay sẽ đóng 20 phút trước giờ khởi hành dự kiến.\n", fontTiny));
+        footer.add(new Chunk("- Chúc quý khách có một chuyến bay tốt đẹp cùng FlyViet Airlines!", fontTiny));
         footer.setAlignment(Element.ALIGN_LEFT);
         document.add(footer);
 

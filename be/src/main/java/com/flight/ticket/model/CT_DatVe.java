@@ -75,5 +75,8 @@ public class CT_DatVe {
     @Builder.Default
     @Column(name = "GiaBaoHiem")
     private Integer giaBaoHiem = 0;
+
+    @Column(name = "TrangThai", length = 50)
+    private String trangThai; // e.g., 'CHECKED_IN'
 }
 

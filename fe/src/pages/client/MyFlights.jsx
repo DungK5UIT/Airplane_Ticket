@@ -99,6 +99,7 @@ export default function MyFlights() {
 
         return (booking.tickets || []).map(ticket => ({
             ...ticket,
+            maDatVe: booking.maDatVe,
             maDatCho: booking.maDatCho,
             tongTien: booking.tongTien,
             trangThaiBooking: status,
@@ -114,6 +115,23 @@ export default function MyFlights() {
             return;
         }
         window.location.href = `http://localhost:8080/api/tickets/download/${maVe}`;
+    };
+
+    const handlePayment = async (flight) => {
+        try {
+            setIsLoading(true);
+            const response = await authService.createVnpayPayment(flight.tongTien, flight.maDatVe);
+            if (response && response.data) {
+                window.location.href = response.data;
+            } else {
+                alert("Không thể tạo liên kết thanh toán. Vui lòng thử lại sau.");
+            }
+        } catch (error) {
+            console.error("Payment error:", error);
+            alert("Có lỗi xảy ra trong quá trình xử lý thanh toán.");
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     const filteredFlights = allFlights.filter(f => {
@@ -135,7 +153,7 @@ export default function MyFlights() {
     };
 
     const renderCountdown = (flight) => {
-        if (flight.trangThaiBooking === 'PENDING' && flight.expireTime) {
+        if (flight.trangThaiBooking === 'Chưa thanh toán' && flight.expireTime) {
             const diffMs = flight.expireTime - currentTime;
             if (diffMs > 0) {
                 const diffMins = Math.floor(diffMs / (1000 * 60));
@@ -283,7 +301,7 @@ export default function MyFlights() {
                                             <div className="flex flex-col gap-2">
                                                 {renderCountdown(flight)}
                                                 <div className="flex gap-2 w-full mt-1">
-                                                    {(flight.trangThaiBooking === 'SUCCESS' || flight.trangThaiBooking === 'COMPLETED') && (
+                                                    {(flight.trangThaiBooking === 'Đã thanh toán' || flight.trangThaiBooking === 'COMPLETED') && (
                                                         <button 
                                                             onClick={() => handleDownloadTicket(flight.maVe)}
                                                             className="flex-grow py-3 bg-sky-600 text-white text-sm font-bold rounded-xl hover:bg-sky-700 transition-all flex items-center justify-center gap-2 shadow-sm shadow-sky-200"
@@ -295,9 +313,9 @@ export default function MyFlights() {
                                                             <span>Tải vé</span>
                                                         </button>
                                                     )}
-                                                    {flight.trangThaiBooking === 'PENDING' && (
+                                                    {flight.trangThaiBooking === 'Chưa thanh toán' && (
                                                         <button 
-                                                            onClick={() => alert('Vui lòng thanh toán qua cổng thanh toán được cung cấp trong email hoặc trang quản lý của bạn.')}
+                                                            onClick={() => handlePayment(flight)}
                                                             className="flex-grow py-3 bg-orange-500 text-white text-sm font-bold rounded-xl hover:bg-orange-600 transition-all flex items-center justify-center gap-2 shadow-sm shadow-orange-200"
                                                         >
                                                             <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">

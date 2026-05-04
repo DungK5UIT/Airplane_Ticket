@@ -47,4 +47,24 @@ public class BookingController {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
+
+    @GetMapping("/pnr/{pnr}")
+    public ResponseEntity<?> getBookingByPNR(@PathVariable String pnr) {
+        try {
+            return ResponseEntity.ok(bookingService.getBookingByPNR(pnr));
+        } catch (Exception e) {
+            return ResponseEntity.status(404).body(e.getMessage());
+        }
+    }
+
+    @PutMapping("/{id}/checkin")
+    public ResponseEntity<?> updateCheckinStatus(@PathVariable int id, @RequestBody java.util.Map<String, String> request) {
+        try {
+            String status = request.get("status");
+            bookingService.updateCheckinStatus(id, status);
+            return ResponseEntity.ok("Cập nhật trạng thái thành công");
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
 }

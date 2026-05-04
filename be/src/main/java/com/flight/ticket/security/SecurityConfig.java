@@ -61,6 +61,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/revenue/**").permitAll()
                         .requestMatchers("/api/flights/create").permitAll()
                         .requestMatchers("/api/payment/**").permitAll()
+                        .requestMatchers("/api/chat/**").permitAll()
                         .requestMatchers("/error").permitAll()
                         .requestMatchers("/api/users/**").authenticated()
                         .anyRequest().authenticated());

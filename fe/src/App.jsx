@@ -30,6 +30,7 @@ import EmployeeFlights from './pages/employee/EmployeeFlights';
 import VnPayReturn from './pages/client/VnPayReturn';
 
 
+import Chatbot from './components/Chatbot';
 
 function App() {
   return (
@@ -64,8 +65,7 @@ function App() {
         <Route path="/employee/checkin" element={<EmployeeCheckin />} />
         <Route path="/employee/flights" element={<EmployeeFlights />} />
       </Routes>
-
-
+      <Chatbot />
     </Router>
   );
 }

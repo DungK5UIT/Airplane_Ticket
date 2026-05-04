@@ -16,6 +16,7 @@ services:
       - SPRING_DATASOURCE_URL=jdbc:mysql://host.docker.internal:3306/FlightTicket?useSSL=false&serverTimezone=Asia/Ho_Chi_Minh&allowPublicKeyRetrieval=true
       - SPRING_DATASOURCE_USERNAME=root
       - SPRING_DATASOURCE_PASSWORD=Lamdv(156404)
+      - AI_API_KEY=${AI_API_KEY}
 
   frontend:
     build:
